@@ -8,8 +8,15 @@ interface BrandLayoutProps {
   subtitle?: string
   /** Chamada curta acima do titulo (ex.: "Bem-vindo de volta"). */
   eyebrow?: string
+  /** Linhas do slogan do painel de marca; a ultima recebe o destaque magenta. */
+  slogan?: readonly string[]
+  /** Texto de apoio abaixo do slogan. */
+  lead?: string
   children: ReactNode
 }
+
+const defaultSlogan = ['Controle.', 'Planeje.', 'Evolua.']
+const defaultLead = 'Mais que finanças. Um estilo de vida com liberdade, disciplina e grandes planos.'
 
 const benefits = [
   { icon: FiBarChart2, text: 'Tenha visão total das suas finanças' },
@@ -22,7 +29,14 @@ const benefits = [
  * mensagem (desktop) + cartao de vidro com o conteudo; no mobile, cabecalho
  * compacto e prioridade ao conteudo. Usa apenas os assets oficiais.
  */
-export function BrandLayout({ title, subtitle, eyebrow, children }: BrandLayoutProps) {
+export function BrandLayout({
+  title,
+  subtitle,
+  eyebrow,
+  slogan = defaultSlogan,
+  lead = defaultLead,
+  children,
+}: BrandLayoutProps) {
   const titleId = useId()
 
   return (
@@ -31,13 +45,13 @@ export function BrandLayout({ title, subtitle, eyebrow, children }: BrandLayoutP
         <img className={styles.logo} src={logoHorizontal} alt="Money Marques" width={900} height={506} />
         <div className={styles.hero}>
           <p className={styles.slogan}>
-            <span>Controle.</span>
-            <span>Planeje.</span>
-            <span className={styles.sloganAccent}>Evolua.</span>
+            {slogan.map((line, index) => (
+              <span key={line} className={index === slogan.length - 1 ? styles.sloganAccent : undefined}>
+                {line}
+              </span>
+            ))}
           </p>
-          <p className={styles.lead}>
-            Mais que finanças. Um estilo de vida com liberdade, disciplina e grandes planos.
-          </p>
+          <p className={styles.lead}>{lead}</p>
           <ul className={styles.benefits}>
             {benefits.map(({ icon: Icon, text }) => (
               <li key={text} className={styles.benefit}>
