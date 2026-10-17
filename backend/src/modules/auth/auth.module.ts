@@ -40,6 +40,12 @@ import { TotpService } from './services/totp.service';
     AuthGuard,
   ],
   // Outros modulos protegem suas rotas com @Auth() (AuthGuard + SessionService).
-  exports: [AuthGuard, SessionService, SessionCookieService],
+  exports: [
+    AuthGuard,
+    SessionService,
+    SessionCookieService,
+    EmailVaultService,
+    TokenService,
+  ],
 })
 export class AuthModule {}

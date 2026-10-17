@@ -11,11 +11,14 @@ export interface AuditEventInput {
   resultado: ResultadoAuditoria;
   client?: ClientInfo;
   usuarioUid?: string | null;
+  familiaUid?: string | null;
   sessaoUid?: string | null;
   codigoHttp?: number;
   recurso?: string;
   recursoUid?: string;
   metadados?: SafeMetadata;
+  /** Antes/depois de alteracoes (somente valores primitivos e nao sensiveis). */
+  alteracoes?: SafeMetadata;
 }
 
 /**
@@ -36,6 +39,7 @@ export class AuditService {
           acao: event.acao,
           resultado: event.resultado,
           usuarioUid: event.usuarioUid ?? null,
+          familiaUid: event.familiaUid ?? null,
           sessaoUid: event.sessaoUid ?? null,
           ipOrigem: event.client?.ip ?? null,
           userAgent: event.client?.userAgent ?? null,
@@ -45,6 +49,7 @@ export class AuditService {
           recurso: event.recurso ?? null,
           recursoUid: event.recursoUid ?? null,
           metadadosSeguros: event.metadados ?? undefined,
+          alteracoesSeguras: event.alteracoes ?? undefined,
         },
       });
     } catch (error) {

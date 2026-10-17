@@ -3,6 +3,7 @@ import { SecurityModule } from './common/security/security.module';
 import { AppConfigModule } from './config/app-config.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { FamilyModule } from './modules/family/family.module';
 import { MailModule } from './modules/mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -14,6 +15,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuditModule,
     MailModule,
     AuthModule,
+    FamilyModule,
   ],
 })
 export class AppModule {}

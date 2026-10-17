@@ -13,6 +13,11 @@ export type ApiErrorCode =
   | 'MFA_ALREADY_ENABLED'
   | 'MFA_NOT_CONFIGURED'
   | 'NOT_FOUND'
+  | 'FORBIDDEN'
+  | 'LAST_ADMIN_REQUIRED'
+  | 'ALREADY_MEMBER'
+  | 'INVITE_ALREADY_PENDING'
+  | 'INVITE_NOT_PENDING'
   | 'INTERNAL_ERROR';
 
 export type FieldErrors = Record<string, string[]>;
@@ -110,6 +115,49 @@ export const ApiErrors = {
       HttpStatus.CONFLICT,
       'MFA_ALREADY_ENABLED',
       'A verificação em duas etapas já está ativa.',
+    ),
+
+  /** 404 em vez de 403 quando ha risco de enumeracao (familias, convites). */
+  notFound: () =>
+    new ApiException(
+      HttpStatus.NOT_FOUND,
+      'NOT_FOUND',
+      'Recurso não encontrado.',
+    ),
+
+  forbidden: () =>
+    new ApiException(
+      HttpStatus.FORBIDDEN,
+      'FORBIDDEN',
+      'Você não tem permissão para realizar esta ação.',
+    ),
+
+  lastAdminRequired: () =>
+    new ApiException(
+      HttpStatus.CONFLICT,
+      'LAST_ADMIN_REQUIRED',
+      'A família precisa de pelo menos um administrador ativo. Transfira a administração antes.',
+    ),
+
+  alreadyMember: () =>
+    new ApiException(
+      HttpStatus.CONFLICT,
+      'ALREADY_MEMBER',
+      'Esta pessoa já faz parte da família.',
+    ),
+
+  invitePending: () =>
+    new ApiException(
+      HttpStatus.CONFLICT,
+      'INVITE_ALREADY_PENDING',
+      'Já existe um convite pendente para este e-mail.',
+    ),
+
+  inviteNotPending: () =>
+    new ApiException(
+      HttpStatus.CONFLICT,
+      'INVITE_NOT_PENDING',
+      'Este convite não está mais pendente.',
     ),
 
   mfaNotConfigured: () =>

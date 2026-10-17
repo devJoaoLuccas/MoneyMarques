@@ -39,6 +39,7 @@ export class AuthConfig {
   readonly rememberSessionTtlMs: number;
   readonly emailVerificationTtlMs: number;
   readonly passwordResetTtlMs: number;
+  readonly familyInviteTtlMs: number;
 
   constructor(env: Env) {
     this.isProduction = env.NODE_ENV === 'production';
@@ -70,6 +71,9 @@ export class AuthConfig {
       positiveNumber(env, 'EMAIL_VERIFICATION_TTL_HOURS', 24) * HOUR_MS;
     this.passwordResetTtlMs =
       positiveNumber(env, 'PASSWORD_RESET_TTL_MINUTES', 30) * 60 * 1000;
+    // D-FAM-002: validade padrao de 7 dias (configuravel).
+    this.familyInviteTtlMs =
+      positiveNumber(env, 'FAMILY_INVITE_TTL_DAYS', 7) * DAY_MS;
   }
 
   /** Em producao o cookie usa o prefixo __Host- (exige Secure, Path=/ e sem Domain). */

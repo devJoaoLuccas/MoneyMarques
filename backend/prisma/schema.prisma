@@ -350,8 +350,11 @@ model IntegranteFamilia {
   familia Familia @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
   usuario Usuario @relation(fields: [usuarioUid], references: [uid], onDelete: Restrict)
 
-  @@unique([familiaUid, usuarioUid])
+  // Um vinculo ATIVO por usuario/familia: indice unico parcial em constraints.sql
+  // (permite reingresso apos remocao logica, preservando o historico).
+  @@index([familiaUid, usuarioUid, situacao])
   @@index([familiaUid, papel, situacao])
+  @@index([usuarioUid, situacao])
   @@map("integrante_familia")
 }
 

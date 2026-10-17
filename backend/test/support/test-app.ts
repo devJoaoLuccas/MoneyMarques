@@ -90,6 +90,17 @@ export class ApiClient {
       .set('X-CSRF-Protection', '1')
       .send(body ?? {});
   }
+
+  patch(path: string, body?: object) {
+    return this.agent
+      .patch(`/api${path}`)
+      .set('X-CSRF-Protection', '1')
+      .send(body ?? {});
+  }
+
+  delete(path: string) {
+    return this.agent.delete(`/api${path}`).set('X-CSRF-Protection', '1');
+  }
 }
 
 /** Par nome=valor do cookie de sessao a partir de uma resposta com Set-Cookie. */
