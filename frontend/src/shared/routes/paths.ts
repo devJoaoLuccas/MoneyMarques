@@ -14,6 +14,12 @@ export const paths = {
   familyMembers: '/familia/integrantes',
   familySentInvites: '/familia/convites-enviados',
   app: '/app',
+  dashboard: '/painel',
+  dashboardIncomeExpenses: '/painel/receitas-despesas',
+  dashboardCards: '/painel/cartoes',
+  dashboardNetWorth: '/painel/patrimonio',
+  dashboardProjections: '/painel/projecoes',
+  dashboardDueDates: '/painel/vencimentos',
 } as const
 
 export type AppPath = (typeof paths)[keyof typeof paths]

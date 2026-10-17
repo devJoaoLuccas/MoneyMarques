@@ -55,6 +55,18 @@
   --size-auth-card: 440px;
   --size-card-wide: 720px;
 
+  /* Navegacao autenticada (menu lateral, barra superior e drawer) */
+  --size-sidebar: 280px;
+  --size-sidebar-compact: 72px;
+  --size-topbar: 64px;
+  --size-drawer: 320px;
+  --size-content-max: 1200px;
+  --z-topbar: 20;
+  --z-drawer: 40;
+  --gradient-menu-active: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  --glow-menu: 0 0 24px color-mix(in srgb, var(--color-secondary-neon) 18%, transparent);
+  --surface-overlay: color-mix(in srgb, var(--color-bg) 80%, transparent);
+
   /* Tipografia */
   --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-brand: 'Space Grotesk Variable', 'Space Grotesk', var(--font-sans);

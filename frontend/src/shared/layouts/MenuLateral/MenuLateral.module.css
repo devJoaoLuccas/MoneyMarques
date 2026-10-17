@@ -1,0 +1,360 @@
+/* Mobile-first: abaixo de 1024 px so existem a barra superior e o drawer. */
+.aside {
+  display: none;
+}
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-topbar);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  height: var(--size-topbar);
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.logoBarra {
+  width: auto;
+  height: var(--space-8);
+}
+
+.acoesBarra {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.botaoBarra,
+.fechar,
+.recolher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: 0;
+  background: transparent;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--icon-size-large);
+  cursor: pointer;
+}
+
+.botaoBarra:hover:not(:disabled),
+.fechar:hover,
+.recolher:hover {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+}
+
+.botaoBarra:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  background: var(--gradient-menu-active);
+  border-radius: 50%;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-text-small);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Drawer */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  background: var(--surface-overlay);
+}
+
+.drawer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(var(--size-drawer), 100%);
+  height: 100%;
+  padding: var(--space-4);
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-right: var(--border-width) solid var(--color-secondary-neon);
+  box-shadow: var(--glow-menu);
+}
+
+.fechar {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+}
+
+/* Conteudo compartilhado entre sidebar e drawer */
+.marca {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-topbar);
+  padding-right: var(--touch-target);
+}
+
+.logo {
+  width: 100%;
+  max-width: calc(var(--space-8) * 6);
+  height: auto;
+}
+
+.simbolo {
+  width: var(--space-8);
+  height: var(--space-8);
+}
+
+.nav {
+  flex: 1;
+}
+
+.lista,
+.submenu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.submenu[hidden] {
+  display: none;
+}
+
+.submenu {
+  padding: var(--space-1) 0 var(--space-1) var(--space-6);
+}
+
+.li {
+  position: relative;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-text);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.item:hover:not(:disabled) {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+}
+
+.itemAtivo,
+.itemAtivo:hover {
+  background: var(--gradient-menu-active);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--glow-primary);
+}
+
+.itemPai {
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.itemEmBreve {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.icone {
+  flex-shrink: 0;
+  font-size: var(--icon-size-large);
+}
+
+.rotulo {
+  flex: 1;
+  min-width: 0;
+}
+
+.seta {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.setaAberta {
+  transform: rotate(180deg);
+}
+
+.marcador {
+  flex-shrink: 0;
+  width: var(--space-2);
+  height: var(--space-2);
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.selo {
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  font-size: var(--font-size-helper);
+}
+
+.perfil {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.perfilTexto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.perfilNome {
+  overflow: hidden;
+  font-weight: var(--font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perfilPapel {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-helper);
+}
+
+.recolher {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .seta {
+    transition: none;
+  }
+}
+
+/* Desktop (>= 1024 px): sidebar fixa; barra superior e drawer saem de cena. */
+@media (min-width: 1024px) {
+  .barra,
+  .overlay {
+    display: none;
+  }
+
+  .aside {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: var(--space-4);
+    width: var(--size-sidebar);
+    height: 100vh;
+    padding: var(--space-4);
+    overflow-y: auto;
+    background: var(--color-surface);
+    border-right: var(--border-width) solid var(--color-secondary-neon);
+    box-shadow: var(--glow-menu);
+  }
+
+  .asideCompacto {
+    width: var(--size-sidebar-compact);
+    align-items: center;
+    padding-inline: var(--space-2);
+  }
+
+  .asideCompacto .item {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .asideCompacto .rotulo,
+  .asideCompacto .seta,
+  .asideCompacto .selo {
+    display: none;
+  }
+
+  .asideCompacto .marca,
+  .asideCompacto .nav,
+  .asideCompacto .lista {
+    width: 100%;
+    padding-right: 0;
+  }
+
+  .asideCompacto .marca {
+    justify-content: center;
+  }
+
+  .asideCompacto .perfil {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .recolher {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    padding-inline: var(--space-3);
+    font-size: var(--font-size-text);
+  }
+
+  .recolher svg {
+    font-size: var(--icon-size-large);
+  }
+
+  .asideCompacto .recolher {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .asideCompacto .recolher .rotulo {
+    display: none;
+  }
+
+  /* Tooltip do modo compacto: aparece no hover e no foco por teclado. */
+  .asideCompacto [data-tooltip] {
+    position: relative;
+  }
+
+  .asideCompacto [data-tooltip]:hover::after,
+  .asideCompacto [data-tooltip]:focus-visible::after {
+    content: attr(data-tooltip);
+    position: fixed;
+    left: calc(var(--size-sidebar-compact) + var(--space-2));
+    z-index: var(--z-drawer);
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-surface-secondary);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-control);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-text-small);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}

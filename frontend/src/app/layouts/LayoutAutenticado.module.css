@@ -1,0 +1,53 @@
+/* Mobile-first: barra superior + conteudo; a sidebar fixa so existe a partir de 1024 px. */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.coluna {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: var(--size-content-max);
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.conteudo:focus {
+  outline: none;
+}
+
+.pularParaConteudo {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--z-drawer);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-control);
+  transform: translateY(-200%);
+}
+
+.pularParaConteudo:focus {
+  transform: none;
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    flex-direction: row;
+  }
+
+  .conteudo {
+    padding: var(--space-8);
+  }
+}

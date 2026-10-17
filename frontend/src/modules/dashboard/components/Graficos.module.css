@@ -1,0 +1,113 @@
+.painel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.titulo {
+  font-size: var(--font-size-section-title);
+  font-weight: var(--font-weight-semibold);
+}
+
+.legendaPeriodo {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-helper);
+}
+
+.area {
+  width: 100%;
+  height: calc(var(--space-8) * 9);
+}
+
+.oculto {
+  padding: var(--space-8) var(--space-4);
+  border: var(--border-width) dashed var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-surface-secondary);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  font-size: var(--font-size-text-small);
+}
+
+.detalhes {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+}
+
+.detalhes summary {
+  min-height: var(--touch-target);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela th,
+.tabela td {
+  padding: var(--space-2);
+  border-bottom: var(--border-width) solid var(--color-border);
+  text-align: left;
+}
+
+.tabela td,
+.numero {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.categorias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.categoria {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.categoriaTopo {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-size-text-small);
+}
+
+.areaPizza {
+  width: 100%;
+  height: calc(var(--space-8) * 6);
+}
+
+.nomeCategoria {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.amostra {
+  width: var(--space-3);
+  height: var(--space-3);
+  border-radius: 50%;
+}

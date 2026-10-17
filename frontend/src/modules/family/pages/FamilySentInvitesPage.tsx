@@ -1,6 +1,5 @@
+import { PaginaAutenticada } from '../../../shared/layouts/PaginaAutenticada/PaginaAutenticada'
 import { Alert } from '../../../shared/ui'
-import { BrandLayout } from '../../../shared/layouts/BrandLayout/BrandLayout'
-import { FamilyNav } from '../components/FamilyNav'
 import { SentInvitesPanel } from '../components/SentInvitesPanel'
 import { useActiveFamily } from '../hooks/useFamily'
 
@@ -10,13 +9,12 @@ export function FamilySentInvitesPage() {
   if (!family) return null
 
   return (
-    <BrandLayout wide title="Convites enviados" subtitle="Convide pessoas e acompanhe as respostas.">
-      <FamilyNav papel={family.papel} />
+    <PaginaAutenticada title="Convites enviados" subtitle="Convide pessoas e acompanhe as respostas.">
       {family.papel === 'ADMINISTRADOR' ? (
         <SentInvitesPanel family={family} />
       ) : (
         <Alert variant="warning">Apenas administradores podem gerenciar convites.</Alert>
       )}
-    </BrandLayout>
+    </PaginaAutenticada>
   )
 }

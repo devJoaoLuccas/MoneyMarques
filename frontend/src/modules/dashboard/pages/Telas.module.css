@@ -1,0 +1,259 @@
+/* Estilos compartilhados pelas telas do painel (DASH-001 a DASH-006). Mobile-first. */
+.grade4 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.grade3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.analise {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.atalhos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.atalho {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+  text-decoration: none;
+}
+
+.atalho strong {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-card-title);
+}
+
+.atalho:hover {
+  border-color: var(--color-secondary-neon);
+}
+
+.nota {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+}
+
+.secao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.tituloSecao {
+  font-size: var(--font-size-section-title);
+  font-weight: var(--font-weight-semibold);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-field);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.itemTexto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-helper);
+}
+
+.valor {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.negativo {
+  color: var(--color-negative);
+}
+
+.positivo {
+  color: var(--color-positive);
+}
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid currentColor;
+  border-radius: var(--radius-control);
+  font-size: var(--font-size-helper);
+  font-weight: var(--font-weight-medium);
+}
+
+.vencido {
+  color: var(--color-negative);
+}
+
+.pendente {
+  color: var(--color-warning);
+}
+
+.previsto {
+  color: var(--color-info);
+}
+
+.pago {
+  color: var(--color-positive);
+}
+
+.barraLimite {
+  height: var(--space-2);
+  overflow: hidden;
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-control);
+}
+
+.preenchimento {
+  height: 100%;
+  background: var(--color-secondary-neon);
+}
+
+.preenchimentoAlto {
+  background: var(--color-warning);
+}
+
+.fatos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.fatos dt {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-helper);
+}
+
+.fatos dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.segmentos {
+  display: inline-flex;
+  flex-wrap: wrap;
+  background: var(--surface-field);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.segmento {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--font-size-text-small);
+  cursor: pointer;
+}
+
+.segmentoAtivo {
+  background: var(--gradient-menu-active);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid currentColor;
+  border-radius: var(--radius-control);
+}
+
+.alertaTexto {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-text-small);
+}
+
+@media (min-width: 640px) {
+  .grade4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grade3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .atalhos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .grade4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .grade3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .analise {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+
+  .atalhos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

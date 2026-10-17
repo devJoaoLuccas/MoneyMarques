@@ -1,0 +1,19 @@
+.carregando {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.bloco {
+  min-height: calc(var(--space-8) * 4);
+}
+
+.blocoGrande {
+  min-height: calc(var(--space-8) * 8);
+}
+
+.erro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}

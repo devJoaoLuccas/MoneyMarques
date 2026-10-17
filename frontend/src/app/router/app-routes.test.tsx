@@ -89,7 +89,7 @@ describe('rotas da aplicacao (composicao dos modulos)', () => {
     vi.mocked(familyService.listMembers).mockResolvedValue({ itens: [], pagina: 1, tamanho: 10, total: 0 })
     renderApp('/familia/integrantes')
     expect(await screen.findByRole('heading', { level: 1, name: /integrantes/i })).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: /gestão da família/i })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: /principal/i })).toBeInTheDocument()
   })
 
   it('convites enviados abre para o administrador e a tela de gestao exige familia (FAM-005)', async () => {

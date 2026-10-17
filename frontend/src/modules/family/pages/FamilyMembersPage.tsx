@@ -1,5 +1,4 @@
-import { BrandLayout } from '../../../shared/layouts/BrandLayout/BrandLayout'
-import { FamilyNav } from '../components/FamilyNav'
+import { PaginaAutenticada } from '../../../shared/layouts/PaginaAutenticada/PaginaAutenticada'
 import { MembersPanel } from '../components/MembersPanel'
 import { useActiveFamily } from '../hooks/useFamily'
 
@@ -9,9 +8,8 @@ export function FamilyMembersPage() {
   if (!family) return null
 
   return (
-    <BrandLayout wide title="Integrantes" subtitle={`Pessoas da família ${family.nome}.`}>
-      <FamilyNav papel={family.papel} />
+    <PaginaAutenticada title="Integrantes" subtitle={`Pessoas da família ${family.nome}.`}>
       <MembersPanel family={family} />
-    </BrandLayout>
+    </PaginaAutenticada>
   )
 }
