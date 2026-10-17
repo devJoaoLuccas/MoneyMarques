@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>[ASSUNTO DO E-MAIL]</title>
+<!--
+  TEMPLATE BASE - MONEY MARQUES (Cyber Finance)
+  Todos os valores visuais vêm do Design System v1.0.
+  Itens entre [COLCHETES] são placeholders: conteúdo a ser definido.
+  Itens marcados "DECISÃO PENDENTE" não constam no Design System e precisam de validação.
+
+  Tokens usados:
+  Background #0A0A12 | Surface #121826 | Surface Secondary #1A2235 | Border #29334A
+  Text Primary #F5F7FF | Text Secondary #A7B0C5
+  Primary #7C3AED | Primary Hover #6D28D9 | Secondary Neon #22D3EE
+  Espaçamento: 4/8/12/16/24/32 px | Raios: 8 px botões, 12 px cards
+  Tipografia: Space Grotesk (marca/títulos), Inter (texto)
+-->
+<style>
+  body { margin:0; padding:0; background-color:#0A0A12; }
+  table { border-collapse:collapse; }
+  a { color:#22D3EE; }
+  .btn:hover { background-color:#6D28D9 !important; }
+  @media only screen and (max-width:639px) {
+    .container { width:100% !important; }
+    .px { padding-left:16px !important; padding-right:16px !important; }
+    .h1 { font-size:24px !important; }
+    .card-pad { padding:24px !important; }
+    .btn-wrap, .btn-wrap table { width:100% !important; }
+    .btn { display:block !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#0A0A12;">
+
+<!-- Pré-cabeçalho (texto de prévia na caixa de entrada) -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0A0A12;">
+  [TEXTO DE PRÉVIA]
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0A0A12;">
+  <tr>
+    <td align="center" class="px" style="padding:32px 16px;">
+
+      <!-- DECISÃO PENDENTE: largura do container (600 px é placeholder, o DS não define largura de e-mail) -->
+      <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+        <!-- LOGO -->
+        <tr>
+          <td align="left" style="padding:0 0 24px 0;">
+            <!-- Inserir o logo horizontal OFICIAL (arquivo não fornecido). Não substituir por ícone genérico. -->
+            <img src="https://i.postimg.cc/tCtthZ9z/logo-horizontal.png" alt="Money Marques" style="display:block;border:0;outline:none;text-decoration:none;max-width:100%;height:auto;font-family:'Space Grotesk',Arial,sans-serif;font-size:16px;color:#F5F7FF;">
+          </td>
+        </tr>
+
+        <!-- CARD PRINCIPAL: Surface, borda Border, raio 12 px, padding 24 px -->
+        <tr>
+          <td class="card-pad" style="background-color:#121826;border:1px solid #29334A;border-radius:12px;padding:32px;">
+
+            <!-- Título de página: 28 px desktop / 24 px mobile, Space Grotesk -->
+            <h1 class="h1" style="margin:0 0 16px 0;font-family:'Space Grotesk',Arial,Helvetica,sans-serif;font-size:28px;line-height:1.25;font-weight:700;color:#F5F7FF;">
+              [TÍTULO DO E-MAIL]
+            </h1>
+
+            <!-- Texto padrão: 16 px, Inter -->
+            <p style="margin:0 0 16px 0;font-family:Inter,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#F5F7FF;">
+              [SAUDAÇÃO / NOME DO USUÁRIO],
+            </p>
+            <p style="margin:0 0 24px 0;font-family:Inter,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#A7B0C5;">
+              [TEXTO PRINCIPAL DO E-MAIL]
+            </p>
+
+            <!-- Botão primário: Primary #7C3AED, hover #6D28D9, raio 8 px, altura mínima 44 px -->
+            <table role="presentation" class="btn-wrap" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;">
+              <tr>
+                <td align="center" style="border-radius:8px;background-color:#7C3AED;">
+                  <a href="[URL_DA_ACAO]" class="btn" style="display:inline-block;min-height:44px;line-height:44px;padding:0 24px;font-family:Inter,Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;color:#F5F7FF;text-decoration:none;border-radius:8px;background-color:#7C3AED;">
+                    [TEXTO DO BOTÃO]
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Texto auxiliar: 12-13 px -->
+            <p style="margin:0;font-family:Inter,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#A7B0C5;">
+              [TEXTO AUXILIAR, ex.: observação sobre o botão]
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- RODAPÉ -->
+        <tr>
+          <td style="padding:32px 0 0 0;">
+            <p style="margin:0 0 8px 0;font-family:Inter,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#A7B0C5;">
+              Este é um e-mail automático enviado pelo sistema Money Marques. Por favor, não responda a esta mensagem.
+            </p>
+            <p style="margin:0;font-family:Inter,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#A7B0C5;">
+              <a href="[URL_TERMOS]" style="color:#22D3EE;">Termos de Uso</a>
+              &nbsp;·&nbsp;
+              <a href="[URL_PRIVACIDADE]" style="color:#22D3EE;">Política de Privacidade</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
