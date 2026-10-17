@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { LuKeyRound, LuUserPlus } from 'react-icons/lu'
 import { toApiError } from '../../../shared/lib/api-error'
 import { describeApiError } from '../../../shared/lib/form-errors'
+import { notify } from '../../../shared/lib/toast'
 import { formatDate } from '../../../shared/lib/format-date'
 import { ActionMenu, Alert, Button, ConfirmDialog, EmptyState, LoadingIndicator, SelectField } from '../../../shared/ui'
 import { useInviteCodes, useInvites, useResendInvite, useRevokeInvite, type ActiveFamily } from '../hooks/useFamily'
@@ -105,10 +106,6 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
   const [situacao, setSituacao] = useState<InviteStatus | ''>('')
   const [revoking, setRevoking] = useState<Invite | null>(null)
   const [modal, setModal] = useState<Modal>(null)
-  const [feedback, setFeedback] = useState<{
-    variant: 'success' | 'error'
-    message: string
-  } | null>(null)
 
   const invites = useInvites(family.uid, {
     pagina,
@@ -121,35 +118,21 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
   const activeCode = codes.data?.find((code) => code.situacao === 'ATIVO') ?? null
 
   async function resendInvite(invite: Invite) {
-    setFeedback(null)
     try {
       await resend.mutateAsync(invite.uid)
-      setFeedback({
-        variant: 'success',
-        message: `Convite reenviado para ${invite.email}. O link anterior foi invalidado.`,
-      })
+      notify.success(`Convite reenviado para ${invite.email}. O link anterior foi invalidado.`)
     } catch (cause) {
-      setFeedback({
-        variant: 'error',
-        message: describeApiError(toApiError(cause)),
-      })
+      notify.error(describeApiError(toApiError(cause)))
     }
   }
 
   async function confirmRevoke() {
     if (!revoking) return
-    setFeedback(null)
     try {
       await revoke.mutateAsync(revoking.uid)
-      setFeedback({
-        variant: 'success',
-        message: `Convite para ${revoking.email} revogado.`,
-      })
+      notify.success(`Convite para ${revoking.email} revogado.`)
     } catch (cause) {
-      setFeedback({
-        variant: 'error',
-        message: describeApiError(toApiError(cause)),
-      })
+      notify.error(describeApiError(toApiError(cause)))
     } finally {
       setRevoking(null)
     }
@@ -174,8 +157,6 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
           </Button>
         </div>
       </div>
-
-      {feedback && <Alert variant={feedback.variant}>{feedback.message}</Alert>}
 
       <SelectField
         label="Filtrar convites"
@@ -252,7 +233,7 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
         <InviteFormDialog
           family={family}
           onClose={() => setModal(null)}
-          onSent={(email) => setFeedback({ variant: 'success', message: `Convite enviado para ${email}.` })}
+          onSent={(email) => notify.success(`Convite enviado para ${email}.`)}
         />
       )}
       {modal === 'codigo' && (
@@ -260,7 +241,7 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
           family={family}
           activeCode={activeCode}
           onClose={() => setModal(null)}
-          onRevoked={() => setFeedback({ variant: 'success', message: 'Código revogado.' })}
+          onRevoked={() => notify.success('Código revogado.')}
         />
       )}
     </section>

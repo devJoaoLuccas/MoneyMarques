@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { LuCopy, LuKeyRound } from 'react-icons/lu'
 import { toApiError } from '../../../shared/lib/api-error'
 import { describeApiError } from '../../../shared/lib/form-errors'
+import { notify } from '../../../shared/lib/toast'
 import { formatDateTime } from '../../../shared/lib/format-date'
 import { Alert, Button, ConfirmDialog, Dialog, LoadingIndicator, SelectField } from '../../../shared/ui'
 import { useActiveInviteCode, useIssueInviteCode, useRevokeInviteCode, type ActiveFamily } from '../hooks/useFamily'
@@ -36,7 +37,6 @@ export function InviteCodeDialog({ family, activeCode, onClose, onRevoked }: Inv
   const [issued, setIssued] = useState<IssuedInviteCode | null>(null)
   const [confirmingRevoke, setConfirmingRevoke] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [copyMessage, setCopyMessage] = useState<{ variant: 'success' | 'error'; text: string } | null>(null)
 
   const viewing = activeCode !== null && issued === null
   const active = useActiveInviteCode(family.uid, viewing)
@@ -57,9 +57,9 @@ export function InviteCodeDialog({ family, activeCode, onClose, onRevoked }: Inv
   async function copy(code: string) {
     try {
       await navigator.clipboard.writeText(code)
-      setCopyMessage({ variant: 'success', text: 'Código copiado.' })
+      notify.success('Código copiado.')
     } catch {
-      setCopyMessage({ variant: 'error', text: 'Não foi possível copiar. Selecione o código e copie manualmente.' })
+      notify.error('Não foi possível copiar. Selecione o código e copie manualmente.')
     }
   }
 
@@ -102,7 +102,6 @@ export function InviteCodeDialog({ family, activeCode, onClose, onRevoked }: Inv
                 </Button>
               </div>
             </div>
-            {copyMessage && <Alert variant={copyMessage.variant}>{copyMessage.text}</Alert>}
             <p className={styles.cardMeta}>
               Vale para uma única pessoa. Quem tiver o código entra na família, então compartilhe só com quem você
               confia.

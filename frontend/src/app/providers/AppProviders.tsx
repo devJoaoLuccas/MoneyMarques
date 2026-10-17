@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { setUnauthorizedHandler } from '../../shared/lib/http'
+import { Toaster } from '../../shared/ui'
 import { registerSessionExpiry } from './session-expiry'
 
 interface AppProvidersProps {
@@ -15,5 +16,10 @@ export function AppProviders({ children }: AppProvidersProps) {
     return () => setUnauthorizedHandler(null)
   }, [queryClient])
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
+  )
 }

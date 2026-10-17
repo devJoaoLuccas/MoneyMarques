@@ -1,6 +1,7 @@
 import { useDeferredValue, useState } from 'react'
 import { toApiError } from '../../../shared/lib/api-error'
 import { describeApiError } from '../../../shared/lib/form-errors'
+import { notify } from '../../../shared/lib/toast'
 import { formatDate } from '../../../shared/lib/format-date'
 import {
   ActionMenu,
@@ -103,10 +104,6 @@ export function MembersPanel({ family }: MembersPanelProps) {
   const [papel, setPapel] = useState<FamilyRole | typeof ALL>(ALL)
   const [situacao, setSituacao] = useState<'ATIVO' | 'REMOVIDO'>('ATIVO')
   const [pending, setPending] = useState<PendingAction | null>(null)
-  const [feedback, setFeedback] = useState<{
-    variant: 'success' | 'error'
-    message: string
-  } | null>(null)
 
   const deferredNome = useDeferredValue(nome.trim())
   const query: MembersQuery = {
@@ -129,29 +126,19 @@ export function MembersPanel({ family }: MembersPanelProps) {
 
   async function confirm() {
     if (!pending) return
-    setFeedback(null)
     try {
       if (pending.type === 'role') {
         await changeRole.mutateAsync({
           integranteUid: pending.member.uid,
           papel: pending.papel,
         })
-        setFeedback({
-          variant: 'success',
-          message: `Papel de ${pending.member.nome} atualizado.`,
-        })
+        notify.success(`Papel de ${pending.member.nome} atualizado.`)
       } else {
         await removeMember.mutateAsync(pending.member.uid)
-        setFeedback({
-          variant: 'success',
-          message: `${pending.member.nome} foi removido(a) da família.`,
-        })
+        notify.success(`${pending.member.nome} foi removido(a) da família.`)
       }
     } catch (cause) {
-      setFeedback({
-        variant: 'error',
-        message: describeApiError(toApiError(cause)),
-      })
+      notify.error(describeApiError(toApiError(cause)))
     } finally {
       setPending(null)
     }
@@ -161,8 +148,6 @@ export function MembersPanel({ family }: MembersPanelProps) {
 
   return (
     <div className={styles.form}>
-      {feedback && <Alert variant={feedback.variant}>{feedback.message}</Alert>}
-
       <div className={styles.filters}>
         <TextField
           label="Buscar por nome"

@@ -145,7 +145,7 @@ describe('MembersPanel (FAM-003)', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Remover da família' }))
     await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: /remover da família/i }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/pelo menos um administrador ativo/i)
+    expect(await screen.findByText(/pelo menos um administrador ativo/i)).toBeInTheDocument()
   })
 
   it('removidos nao tem acoes e a data de remocao e exibida', async () => {
