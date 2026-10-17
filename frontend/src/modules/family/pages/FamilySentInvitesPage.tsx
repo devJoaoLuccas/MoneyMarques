@@ -1,5 +1,6 @@
 import { PaginaAutenticada } from '../../../shared/layouts/PaginaAutenticada/PaginaAutenticada'
 import { Alert } from '../../../shared/ui'
+import { InviteCodesPanel } from '../components/InviteCodesPanel'
 import { SentInvitesPanel } from '../components/SentInvitesPanel'
 import { useActiveFamily } from '../hooks/useFamily'
 
@@ -11,7 +12,10 @@ export function FamilySentInvitesPage() {
   return (
     <PaginaAutenticada title="Convites enviados" subtitle="Convide pessoas e acompanhe as respostas.">
       {family.papel === 'ADMINISTRADOR' ? (
-        <SentInvitesPanel family={family} />
+        <>
+          <SentInvitesPanel family={family} />
+          <InviteCodesPanel family={family} />
+        </>
       ) : (
         <Alert variant="warning">Apenas administradores podem gerenciar convites.</Alert>
       )}

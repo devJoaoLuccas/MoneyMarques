@@ -59,3 +59,19 @@ export interface InvitesQuery {
   pagina: number
   situacao?: InviteStatus
 }
+
+export type InviteCodeStatus = 'ATIVO' | 'USADO' | 'REVOGADO' | 'EXPIRADO'
+
+export interface InviteCode {
+  uid: string
+  papel: FamilyRole
+  situacao: InviteCodeStatus
+  expiraEm: string
+  criadoEm: string
+  usadoEm: string | null
+}
+
+/** O codigo em claro so vem na resposta da geracao. */
+export interface IssuedInviteCode extends InviteCode {
+  codigo: string
+}

@@ -168,3 +168,20 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+.codeValue {
+  font-family: var(--font-brand);
+  font-size: var(--font-size-page-title);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.12em;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.divider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--color-border);
+}

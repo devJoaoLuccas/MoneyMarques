@@ -12,6 +12,7 @@ export const familyKeys = {
   scope: (familiaUid: string) => ['family', familiaUid] as const,
   members: (familiaUid: string, query?: MembersQuery) => ['family', familiaUid, 'members', query] as const,
   invites: (familiaUid: string, query?: InvitesQuery) => ['family', familiaUid, 'invites', query] as const,
+  inviteCodes: (familiaUid: string) => ['family', familiaUid, 'invite-codes'] as const,
 }
 
 export interface ActiveFamily {
@@ -170,5 +171,44 @@ export function useDeclinePendingInvite() {
   return useMutation({
     mutationFn: (conviteUid: string) => familyService.declinePendingInvite(conviteUid),
     onSuccess: refreshSession,
+  })
+}
+
+export function useInviteCodes(familiaUid: string) {
+  return useQuery({
+    queryKey: familyKeys.inviteCodes(familiaUid),
+    queryFn: () => familyService.listInviteCodes(familiaUid),
+  })
+}
+
+export function useIssueInviteCode(familiaUid: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (papel: Exclude<FamilyRole, 'ADMINISTRADOR'>) => familyService.issueInviteCode(familiaUid, papel),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: familyKeys.inviteCodes(familiaUid) }),
+  })
+}
+
+export function useRevokeInviteCode(familiaUid: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (codigoUid: string) => familyService.revokeInviteCode(familiaUid, codigoUid),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: familyKeys.inviteCodes(familiaUid) }),
+  })
+}
+
+/** Previa do codigo digitado (nao consome o codigo). */
+export function usePreviewInviteCode() {
+  return useMutation({ mutationFn: (codigo: string) => familyService.previewInviteCode(codigo) })
+}
+
+export function useRedeemInviteCode() {
+  const refreshSession = useRefreshSession()
+  return useMutation({
+    mutationFn: (codigo: string) => familyService.redeemInviteCode(codigo),
+    onSuccess: async ({ familiaUid }) => {
+      setSelectedFamily(familiaUid)
+      await refreshSession()
+    },
   })
 }

@@ -105,7 +105,7 @@ describe('rotas da aplicacao (composicao dos modulos)', () => {
       contexto: { tipo: 'sem_familia', familias: [], convitesPendentes: [] },
     } as SessionView)
     const router = renderApp('/familia/integrantes')
-    expect(await screen.findByRole('heading', { level: 1, name: /crie sua família/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: /crie ou entre em uma família/i })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/familia/nova')
   })
 

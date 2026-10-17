@@ -1,6 +1,17 @@
 import { http } from '../../../shared/lib/http'
 import type { CreateFamilyPayload, InvitePayload } from '../schemas/family.schemas'
-import type { Family, FamilyRole, Invite, InvitePreview, InvitesQuery, Member, MembersQuery, Page } from '../types'
+import type {
+  Family,
+  FamilyRole,
+  Invite,
+  InviteCode,
+  IssuedInviteCode,
+  InvitePreview,
+  InvitesQuery,
+  Member,
+  MembersQuery,
+  Page,
+} from '../types'
 
 const PAGE_SIZE = 10
 
@@ -80,5 +91,32 @@ export const familyService = {
 
   async declinePendingInvite(conviteUid: string): Promise<void> {
     await http.post(`/convites/pendentes/${conviteUid}/recusar`)
+  },
+
+  // ─── Codigo de convite (entrada sem e-mail de destino) ─────────────────────
+
+  async issueInviteCode(familiaUid: string, papel: Exclude<FamilyRole, 'ADMINISTRADOR'>): Promise<IssuedInviteCode> {
+    const { data } = await http.post<IssuedInviteCode>(`/familias/${familiaUid}/codigos-convite`, { papel })
+    return data
+  },
+
+  async listInviteCodes(familiaUid: string): Promise<InviteCode[]> {
+    const { data } = await http.get<InviteCode[]>(`/familias/${familiaUid}/codigos-convite`)
+    return data
+  },
+
+  async revokeInviteCode(familiaUid: string, codigoUid: string): Promise<void> {
+    await http.post(`/familias/${familiaUid}/codigos-convite/${codigoUid}/revogar`)
+  },
+
+  /** O codigo vai no corpo, nunca na URL. */
+  async previewInviteCode(codigo: string): Promise<InvitePreview> {
+    const { data } = await http.post<InvitePreview>('/convites/codigo/previa', { codigo })
+    return data
+  },
+
+  async redeemInviteCode(codigo: string): Promise<{ familiaUid: string }> {
+    const { data } = await http.post<{ familiaUid: string }>('/convites/codigo/entrar', { codigo })
+    return data
   },
 }
