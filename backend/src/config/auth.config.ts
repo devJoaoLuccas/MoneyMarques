@@ -35,6 +35,7 @@ export class AuthConfig {
   readonly mfaIssuer: string;
   readonly emailHmacKey: string;
   readonly emailEncryptionKey: Buffer;
+  readonly inviteCodeEncryptionKey: Buffer;
   readonly sessionTtlMs: number;
   readonly rememberSessionTtlMs: number;
   readonly emailVerificationTtlMs: number;
@@ -63,6 +64,14 @@ export class AuthConfig {
       );
     }
     this.emailEncryptionKey = Buffer.from(emailKey, 'hex');
+
+    const inviteCodeKey = requireString(env, 'INVITE_CODE_ENCRYPTION_KEY');
+    if (!/^[0-9a-f]{64}$/i.test(inviteCodeKey)) {
+      throw new Error(
+        'INVITE_CODE_ENCRYPTION_KEY deve ter 32 bytes em hexadecimal (64 caracteres).',
+      );
+    }
+    this.inviteCodeEncryptionKey = Buffer.from(inviteCodeKey, 'hex');
 
     this.sessionTtlMs = positiveNumber(env, 'SESSION_TTL_HOURS', 12) * HOUR_MS;
     this.rememberSessionTtlMs =

@@ -19,6 +19,12 @@ CREATE UNIQUE INDEX integrante_ativo_unico
 ALTER TABLE codigo_convite_familia ADD CONSTRAINT codigo_convite_papel_sem_admin CHECK (papel_oferecido <> 'ADMINISTRADOR');
 ALTER TABLE codigo_convite_familia ADD CONSTRAINT codigo_convite_hash_formato CHECK (codigo_hash ~ '^[0-9a-f]{64}$');
 
+-- Codigo de convite (migration 20261019130000): um unico ATIVO por familia; copia cifrada so enquanto ATIVO
+CREATE UNIQUE INDEX codigo_convite_ativo_unico
+  ON codigo_convite_familia (familia_uid) WHERE situacao = 'ATIVO';
+ALTER TABLE codigo_convite_familia ADD CONSTRAINT codigo_convite_copia_so_ativo
+  CHECK (codigo_criptografado IS NULL OR situacao = 'ATIVO');
+
 -- Exatamente um administrador ativo no minimo: validado em transacao no servico
 -- (a regra "ultimo administrador" nao e expressavel como CHECK de linha).
 

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -154,6 +155,7 @@ export class FamilyController {
 
   /** O codigo em claro aparece so nesta resposta. */
   @FamilyAccess('CONVIDAR')
+  @Header('Cache-Control', 'no-store')
   @Post(':familiaUid/codigos-convite')
   issueInviteCode(
     @CurrentFamily() scope: FamilyScope,
@@ -168,6 +170,18 @@ export class FamilyController {
   @Get(':familiaUid/codigos-convite')
   listInviteCodes(@CurrentFamily() scope: FamilyScope) {
     return this.inviteCodes.list(scope);
+  }
+
+  /** Codigo ativo em claro (copia cifrada), so para administradores e sem cache. */
+  @FamilyAccess('LISTAR_CONVITES')
+  @Header('Cache-Control', 'no-store')
+  @Get(':familiaUid/codigos-convite/ativo')
+  getActiveInviteCode(
+    @CurrentFamily() scope: FamilyScope,
+    @CurrentAuth() auth: AuthContext,
+    @Client() client: ClientInfo,
+  ) {
+    return this.inviteCodes.getActive(scope, auth, client);
   }
 
   @FamilyAccess('REVOGAR_CONVITE')

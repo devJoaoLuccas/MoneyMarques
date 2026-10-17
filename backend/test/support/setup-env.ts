@@ -9,3 +9,4 @@ process.env.MFA_ENCRYPTION_KEY = 'ab'.repeat(32);
 process.env.MFA_ISSUER = 'Money Marques Teste';
 process.env.EMAIL_HMAC_KEY = 'hmac-de-teste-com-mais-de-32-caracteres!';
 process.env.EMAIL_ENCRYPTION_KEY = 'cd'.repeat(32);
+process.env.INVITE_CODE_ENCRYPTION_KEY = 'ef'.repeat(32);

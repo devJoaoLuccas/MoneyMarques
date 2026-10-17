@@ -4,6 +4,8 @@ export type ApiErrorCode =
   | 'VALIDATION_ERROR'
   | 'INVALID_CREDENTIALS'
   | 'INVALID_INVITE_CODE'
+  | 'INVITE_CODE_ACTIVE'
+  | 'INVITE_CODE_HIDDEN'
   | 'TOO_MANY_ATTEMPTS'
   | 'UNAUTHENTICATED'
   | 'MFA_REQUIRED'
@@ -106,6 +108,20 @@ export const ApiErrors = {
       HttpStatus.BAD_REQUEST,
       'INVALID_INVITE_CODE',
       'Código inválido ou expirado. Confira com quem convidou você.',
+    ),
+
+  inviteCodeActive: () =>
+    new ApiException(
+      HttpStatus.CONFLICT,
+      'INVITE_CODE_ACTIVE',
+      'Já existe um código ativo. Revogue-o para gerar outro.',
+    ),
+
+  inviteCodeHidden: () =>
+    new ApiException(
+      HttpStatus.CONFLICT,
+      'INVITE_CODE_HIDDEN',
+      'Este código foi gerado antes e não pode ser exibido de novo. Revogue-o e gere outro.',
     ),
 
   invalidMfaCode: () =>

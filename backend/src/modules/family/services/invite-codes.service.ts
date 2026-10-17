@@ -11,6 +11,8 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import { AuthContext } from '../../auth/auth.types';
 import { TokenService } from '../../auth/services/token.service';
+import { AesGcmCipher } from '../../../common/security/aes-gcm.cipher';
+import { AuthConfig } from '../../../config/auth.config';
 import {
   generateInviteCode,
   isWellFormedInviteCode,
@@ -66,7 +68,13 @@ export class InviteCodesService {
     private readonly audit: AuditService,
     private readonly tokens: TokenService,
     private readonly limiter: RateLimiterService,
-  ) {}
+    config: AuthConfig,
+  ) {
+    this.cipher = new AesGcmCipher(config.inviteCodeEncryptionKey);
+  }
+
+  /** Chave propria (INVITE_CODE_ENCRYPTION_KEY), distinta das de e-mail, MFA e token. */
+  private readonly cipher: AesGcmCipher;
 
   // ─── Administracao (ADMINISTRADOR) ─────────────────────────────────────────
 
@@ -77,6 +85,10 @@ export class InviteCodesService {
     client: ClientInfo,
   ): Promise<IssuedInviteCode> {
     this.enforceIssueLimits(auth.usuario.uid, scope.familiaUid);
+    // Um codigo ATIVO por familia: vencidos saem do caminho antes de checar.
+    await this.expireOverdue(scope.familiaUid);
+    if (await this.hasActive(scope.familiaUid))
+      throw ApiErrors.inviteCodeActive();
     const papel = dto.papel ?? 'INTEGRANTE';
     const expiraEm = new Date(Date.now() + INVITE_CODE_TTL_MS);
 
@@ -90,6 +102,7 @@ export class InviteCodesService {
             emitidoPorUid: auth.usuario.uid,
             papelOferecido: papel,
             codigoHash: this.hashCode(normalizeInviteCode(codigo)),
+            codigoCriptografado: this.cipher.encrypt(codigo),
             expiraEm,
           },
         });
@@ -107,6 +120,9 @@ export class InviteCodesService {
         return { ...this.toView(row), codigo };
       } catch (error) {
         if (!this.isUniqueViolation(error)) throw error;
+        // Geracoes simultaneas: a segunda perde para o indice de "um ativo por familia".
+        if (await this.hasActive(scope.familiaUid))
+          throw ApiErrors.inviteCodeActive();
       }
     }
     throw new Error('Nao foi possivel gerar um codigo unico.');
@@ -122,6 +138,39 @@ export class InviteCodesService {
     return rows.map((row) => this.toView(row));
   }
 
+  /**
+   * Revisualizacao do codigo ATIVO (somente administradores). A copia cifrada
+   * so existe enquanto o codigo esta ativo; cada leitura e auditada.
+   */
+  async getActive(
+    scope: FamilyScope,
+    auth: AuthContext,
+    client: ClientInfo,
+  ): Promise<IssuedInviteCode> {
+    await this.expireOverdue(scope.familiaUid);
+    const row = await this.prisma.codigoConviteFamilia.findFirst({
+      where: { familiaUid: scope.familiaUid, situacao: 'ATIVO' },
+    });
+    if (!row) throw ApiErrors.notFound();
+    // Codigo gerado antes da copia cifrada existir: nao ha como mostra-lo de novo.
+    if (!row.codigoCriptografado) throw ApiErrors.inviteCodeHidden();
+
+    await this.audit.record({
+      acao: 'codigo_convite.visualizar',
+      resultado: 'SUCESSO',
+      client,
+      usuarioUid: auth.usuario.uid,
+      sessaoUid: auth.sessaoUid,
+      familiaUid: scope.familiaUid,
+      recurso: 'codigo_convite_familia',
+      recursoUid: row.uid,
+    });
+    return {
+      ...this.toView(row),
+      codigo: this.cipher.decrypt(row.codigoCriptografado),
+    };
+  }
+
   async revoke(
     scope: FamilyScope,
     auth: AuthContext,
@@ -134,7 +183,7 @@ export class InviteCodesService {
         familiaUid: scope.familiaUid,
         situacao: 'ATIVO',
       },
-      data: { situacao: 'REVOGADO' },
+      data: { situacao: 'REVOGADO', codigoCriptografado: null },
     });
     if (result.count === 0) {
       const exists = await this.prisma.codigoConviteFamilia.findFirst({
@@ -220,6 +269,7 @@ export class InviteCodesService {
         where: { uid: current.uid },
         data: {
           situacao: 'USADO',
+          codigoCriptografado: null,
           usadoPorUid: usuarioUid,
           usadoEm: new Date(),
         },
@@ -315,10 +365,18 @@ export class InviteCodesService {
     });
   }
 
+  private async hasActive(familiaUid: string): Promise<boolean> {
+    const found = await this.prisma.codigoConviteFamilia.findFirst({
+      where: { familiaUid, situacao: 'ATIVO' },
+      select: { uid: true },
+    });
+    return found !== null;
+  }
+
   private async expireOverdue(familiaUid: string): Promise<void> {
     await this.prisma.codigoConviteFamilia.updateMany({
       where: { familiaUid, situacao: 'ATIVO', expiraEm: { lte: new Date() } },
-      data: { situacao: 'EXPIRADO' },
+      data: { situacao: 'EXPIRADO', codigoCriptografado: null },
     });
   }
 

@@ -398,16 +398,19 @@ model ConviteFamilia {
 // aparece uma unica vez, na resposta da geracao. Papel oferecido nunca e
 // ADMINISTRADOR (CHECK em constraints.sql).
 model CodigoConviteFamilia {
-  uid            String                @id @default(uuid()) @db.Uuid
-  familiaUid     String                @map("familia_uid") @db.Uuid
-  emitidoPorUid  String                @map("emitido_por_uid") @db.Uuid
-  usadoPorUid    String?               @map("usado_por_uid") @db.Uuid
-  papelOferecido PapelFamilia          @default(INTEGRANTE) @map("papel_oferecido")
-  codigoHash     String                @unique @map("codigo_hash") @db.VarChar(255)
-  situacao       SituacaoCodigoConvite @default(ATIVO)
-  expiraEm       DateTime              @map("expira_em") @db.Timestamptz(3)
-  criadoEm       DateTime              @default(now()) @map("criado_em") @db.Timestamptz(3)
-  usadoEm        DateTime?             @map("usado_em") @db.Timestamptz(3)
+  uid                 String                @id @default(uuid()) @db.Uuid
+  familiaUid          String                @map("familia_uid") @db.Uuid
+  emitidoPorUid       String                @map("emitido_por_uid") @db.Uuid
+  usadoPorUid         String?               @map("usado_por_uid") @db.Uuid
+  papelOferecido      PapelFamilia          @default(INTEGRANTE) @map("papel_oferecido")
+  codigoHash          String                @unique @map("codigo_hash") @db.VarChar(255)
+  // Copia cifrada (AES-256-GCM, chave propria) so enquanto o codigo esta ATIVO,
+  // para o administrador revisualiza-lo; apagada ao usar, revogar ou expirar.
+  codigoCriptografado String?               @map("codigo_criptografado") @db.Text
+  situacao            SituacaoCodigoConvite @default(ATIVO)
+  expiraEm            DateTime              @map("expira_em") @db.Timestamptz(3)
+  criadoEm            DateTime              @default(now()) @map("criado_em") @db.Timestamptz(3)
+  usadoEm             DateTime?             @map("usado_em") @db.Timestamptz(3)
 
   familia Familia  @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
   emissor Usuario  @relation("EmissorCodigoConvite", fields: [emitidoPorUid], references: [uid], onDelete: Restrict)

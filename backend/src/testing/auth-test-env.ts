@@ -5,4 +5,5 @@ export const authTestEnv = {
   MFA_ENCRYPTION_KEY: 'a'.repeat(64),
   EMAIL_HMAC_KEY: 'e'.repeat(40),
   EMAIL_ENCRYPTION_KEY: 'c'.repeat(64),
+  INVITE_CODE_ENCRYPTION_KEY: 'd'.repeat(64),
 };
