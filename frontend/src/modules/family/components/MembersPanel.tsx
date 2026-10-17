@@ -1,9 +1,17 @@
 import { useDeferredValue, useState } from 'react'
-import { LuTrash2 } from 'react-icons/lu'
 import { toApiError } from '../../../shared/lib/api-error'
 import { describeApiError } from '../../../shared/lib/form-errors'
 import { formatDate } from '../../../shared/lib/format-date'
-import { Alert, Button, ConfirmDialog, EmptyState, LoadingIndicator, SelectField, TextField } from '../../../shared/ui'
+import {
+  ActionMenu,
+  Alert,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  LoadingIndicator,
+  SelectField,
+  TextField,
+} from '../../../shared/ui'
 import { useChangeRole, useMembers, useRemoveMember, type ActiveFamily } from '../hooks/useFamily'
 import { ROLE_LABELS, ROLE_OPTIONS } from '../schemas/family.schemas'
 import type { FamilyRole, Member, MembersQuery } from '../types'
@@ -21,6 +29,67 @@ const STATUS_FILTER = [
   { value: 'ATIVO', label: 'Ativos' },
   { value: 'REMOVIDO', label: 'Removidos' },
 ]
+
+/** Nome, e-mail e papel do integrante; `inline` troca <p> por <span> (conteudo de um botao so aceita texto em linha). */
+function MemberSummary({ member, inline }: { member: Member; inline: boolean }) {
+  const Tag = inline ? 'span' : 'p'
+  return (
+    <>
+      <Tag className={styles.cardTitle}>
+        {member.nome}
+        {member.voce && <span className={styles.badge}>Você</span>}
+      </Tag>
+      <Tag className={styles.cardMeta}>{member.email}</Tag>
+      <Tag className={styles.cardMeta}>
+        {ROLE_LABELS[member.papel]} ·{' '}
+        {member.situacao === 'REMOVIDO' && member.removidoEm
+          ? `Removido em ${formatDate(member.removidoEm)}`
+          : `Desde ${formatDate(member.ingressouEm)}`}
+      </Tag>
+    </>
+  )
+}
+
+interface MemberItemProps {
+  member: Member
+  /** Administrador gerenciando um integrante ativo: o card abre o menu de acoes. */
+  canManage: boolean
+  disabled: boolean
+  onChangeRole: (papel: FamilyRole) => void
+  onRemove: () => void
+}
+
+/**
+ * Para administradores, o card de um integrante ativo abre um menu com as
+ * mudancas de papel possiveis e a remocao. Os demais cards nao sao clicaveis.
+ */
+function MemberItem({ member, canManage, disabled, onChangeRole, onRemove }: MemberItemProps) {
+  if (!canManage) {
+    return (
+      <li className={styles.card}>
+        <div className={styles.cardInfo}>
+          <MemberSummary member={member} inline={false} />
+        </div>
+      </li>
+    )
+  }
+  const roleItems = ROLE_OPTIONS.filter((option) => option.value !== member.papel).map((option) => ({
+    label: `Tornar ${option.label}`,
+    onSelect: () => onChangeRole(option.value),
+    disabled,
+  }))
+  return (
+    <li>
+      <ActionMenu
+        menuLabel={`Ações para ${member.nome}`}
+        triggerClassName={styles.cardTrigger}
+        items={[...roleItems, { label: 'Remover da família', onSelect: onRemove, destructive: true, disabled }]}
+      >
+        <MemberSummary member={member} inline />
+      </ActionMenu>
+    </li>
+  )
+}
 
 /**
  * FAM-003: integrantes. Controles administrativos so aparecem para o
@@ -137,47 +206,14 @@ export function MembersPanel({ family }: MembersPanelProps) {
       {members.data && members.data.itens.length > 0 && (
         <ul className={styles.list}>
           {members.data.itens.map((member) => (
-            <li key={member.uid} className={styles.card}>
-              <div className={styles.cardInfo}>
-                <p className={styles.cardTitle}>
-                  {member.nome}
-                  {member.voce && <span className={styles.badge}>Você</span>}
-                </p>
-                <p className={styles.cardMeta}>{member.email}</p>
-                <p className={styles.cardMeta}>
-                  {ROLE_LABELS[member.papel]} ·{' '}
-                  {member.situacao === 'REMOVIDO' && member.removidoEm
-                    ? `Removido em ${formatDate(member.removidoEm)}`
-                    : `Desde ${formatDate(member.ingressouEm)}`}
-                </p>
-              </div>
-              {isAdmin && member.situacao === 'ATIVO' && (
-                <div className={styles.cardActions}>
-                  <SelectField
-                    label={`Papel de ${member.nome}`}
-                    options={ROLE_OPTIONS}
-                    value={member.papel}
-                    disabled={working}
-                    onChange={(event) =>
-                      setPending({
-                        type: 'role',
-                        member,
-                        papel: event.target.value as FamilyRole,
-                      })
-                    }
-                  />
-                  <Button
-                    variant="destructive"
-                    disabled={working}
-                    aria-label={`Remover ${member.nome}`}
-                    onClick={() => setPending({ type: 'remove', member })}
-                  >
-                    <LuTrash2 aria-hidden="true" />
-                    Remover
-                  </Button>
-                </div>
-              )}
-            </li>
+            <MemberItem
+              key={member.uid}
+              member={member}
+              canManage={isAdmin && member.situacao === 'ATIVO'}
+              disabled={working}
+              onChangeRole={(papel) => setPending({ type: 'role', member, papel })}
+              onRemove={() => setPending({ type: 'remove', member })}
+            />
           ))}
         </ul>
       )}

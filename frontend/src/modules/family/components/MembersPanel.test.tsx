@@ -58,8 +58,8 @@ describe('MembersPanel (FAM-003)', () => {
     renderWithProviders(<MembersPanel family={viewer} />)
     await screen.findByText('Bruno Souza')
 
-    expect(screen.queryByRole('button', { name: /remover/i })).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/papel de bruno/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /bruno souza/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Situação')).not.toBeInTheDocument()
     expect(familyService.listMembers).toHaveBeenCalledWith(
       'f1',
@@ -89,7 +89,8 @@ describe('MembersPanel (FAM-003)', () => {
     const user = userEvent.setup()
     await screen.findByText('Bruno Souza')
 
-    await user.selectOptions(screen.getByLabelText('Papel de Bruno Souza'), 'ADMINISTRADOR')
+    await user.click(screen.getByRole('button', { name: /bruno souza/i }))
+    await user.click(screen.getByRole('menuitem', { name: 'Tornar Administrador' }))
     const dialog = screen.getByRole('alertdialog')
     expect(within(dialog).getByText(/de integrante para administrador/i)).toBeInTheDocument()
     expect(familyService.changeRole).not.toHaveBeenCalled()
@@ -104,7 +105,8 @@ describe('MembersPanel (FAM-003)', () => {
     const user = userEvent.setup()
     await screen.findByText('Bruno Souza')
 
-    await user.selectOptions(screen.getByLabelText('Papel de Bruno Souza'), 'VISUALIZADOR')
+    await user.click(screen.getByRole('button', { name: /bruno souza/i }))
+    await user.click(screen.getByRole('menuitem', { name: 'Tornar Visualizador' }))
     await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: /cancelar/i }))
 
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
@@ -116,7 +118,8 @@ describe('MembersPanel (FAM-003)', () => {
     const user = userEvent.setup()
     await screen.findByText('Bruno Souza')
 
-    await user.click(screen.getByRole('button', { name: 'Remover Bruno Souza' }))
+    await user.click(screen.getByRole('button', { name: /bruno souza/i }))
+    await user.click(screen.getByRole('menuitem', { name: 'Remover da família' }))
     const dialog = screen.getByRole('alertdialog')
     expect(within(dialog).getByText(/perderá o acesso à família imediatamente/i)).toBeInTheDocument()
     expect(familyService.removeMember).not.toHaveBeenCalled()
@@ -138,7 +141,8 @@ describe('MembersPanel (FAM-003)', () => {
     const user = userEvent.setup()
     await screen.findByText('Bruno Souza')
 
-    await user.click(screen.getByRole('button', { name: 'Remover Ana Admin' }))
+    await user.click(screen.getByRole('button', { name: /ana admin/i }))
+    await user.click(screen.getByRole('menuitem', { name: 'Remover da família' }))
     await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: /remover da família/i }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/pelo menos um administrador ativo/i)
@@ -160,7 +164,20 @@ describe('MembersPanel (FAM-003)', () => {
     await userEvent.setup().selectOptions(screen.getByLabelText('Situação'), 'REMOVIDO')
 
     expect(await screen.findByText(/removido em 10\/10\/2026/i)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /remover carla/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /carla lima/i })).not.toBeInTheDocument()
+  })
+
+  it('o card do integrante abre um menu com as trocas de papel possiveis e a remocao', async () => {
+    renderWithProviders(<MembersPanel family={admin} />)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /bruno souza/i }))
+    const menu = screen.getByRole('menu', { name: 'Ações para Bruno Souza' })
+    // Bruno e Integrante: so as outras duas opcoes de papel, mais remover.
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((i) => i.textContent),
+    ).toEqual(['Tornar Administrador', 'Tornar Visualizador', 'Remover da família'])
   })
 
   it('paginacao: avanca para a proxima pagina', async () => {
