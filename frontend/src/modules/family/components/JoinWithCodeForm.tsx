@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toApiError } from '../../../shared/lib/api-error'
+import { cn } from '../../../shared/lib/cn'
 import { describeApiError } from '../../../shared/lib/form-errors'
 import { formatDateTime } from '../../../shared/lib/format-date'
 import { paths } from '../../../shared/routes/paths'
@@ -55,7 +56,7 @@ export function JoinWithCodeForm() {
     return (
       <div className={styles.form}>
         {error && <Alert variant="error">{error}</Alert>}
-        <div className={styles.card}>
+        <div className={cn(styles.card, styles.cardStacked)}>
           <div className={styles.cardInfo}>
             <p className={styles.cardTitle}>{found.familiaNome}</p>
             <p className={styles.cardMeta}>
