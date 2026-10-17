@@ -1,0 +1,79 @@
+/*
+ * Design System v1 (Cyber Finance): unica fonte de cores, espacamentos, raios
+ * e tipografia. Nenhum componente usa valor solto: se faltar token, adicione-o aqui.
+ */
+:root {
+  /* Cores */
+  --color-primary: #7c3aed;
+  --color-primary-hover: #6d28d9;
+  --color-bg: #0a0a12;
+  --color-surface: #121826;
+  --color-surface-secondary: #1a2235;
+  --color-text-primary: #f5f7ff;
+  --color-text-secondary: #a7b0c5;
+  --color-positive: #00e6a8;
+  --color-warning: #ffb020;
+  --color-negative: #ff5a7a;
+  --color-info: #3ba7ff;
+  --color-secondary-neon: #22d3ee;
+  --color-accent: #ff2da6;
+  --color-accent-violet: #6d5df6;
+  --color-border: #29334a;
+  --color-focus-ring: #22d3ee;
+
+  /* Espacamento (escala de 4 px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Raios */
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-modal: 16px;
+
+  /* Bordas e efeitos */
+  --border-width: 1px;
+  --focus-ring-width: 2px;
+  --glow-focus: 0 0 0 4px color-mix(in srgb, var(--color-focus-ring) 25%, transparent);
+  --glow-primary: 0 0 16px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  --opacity-disabled: 0.5;
+  --gradient-neon: linear-gradient(135deg, var(--color-accent), var(--color-primary) 55%, var(--color-secondary-neon));
+  --gradient-action: linear-gradient(90deg, var(--color-accent), var(--color-primary));
+  --glow-card: 0 0 32px color-mix(in srgb, var(--color-accent-violet) 30%, transparent);
+  --glow-action: 0 0 20px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  --surface-glass: color-mix(in srgb, var(--color-bg) 72%, transparent);
+  --surface-field: color-mix(in srgb, var(--color-bg) 60%, transparent);
+  --blur-glass: 16px;
+  --icon-size: 20px;
+  --icon-size-large: 24px;
+
+  /* Areas de toque (minimo 44 x 44 px) e largura do cartao de autenticacao */
+  --touch-target: 44px;
+  --size-auth-card: 440px;
+
+  /* Tipografia */
+  --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-brand: 'Space Grotesk Variable', 'Space Grotesk', var(--font-sans);
+  --font-size-page-title: 24px;
+  --font-size-section-title: 18px;
+  --font-size-card-title: 16px;
+  --font-size-text: 16px;
+  --font-size-text-small: 14px;
+  --font-size-helper: 13px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-text: 1.5;
+  --line-height-title: 1.25;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --font-size-page-title: 28px;
+    --font-size-section-title: 20px;
+  }
+}

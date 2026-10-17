@@ -1,0 +1,206 @@
+/* Mobile-first: fundo da marca em tela cheia, marca compacta no topo e cartao de vidro em destaque. */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 55%, transparent), var(--color-bg) 85%),
+    url('../../../assets/brand/bg.webp') center top / cover no-repeat,
+    var(--color-bg);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.logo {
+  width: calc(var(--space-8) * 5);
+  max-width: 60%;
+  height: auto;
+}
+
+.hero {
+  display: none;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* Cartao de vidro com borda em degrade neon (magenta -> violeta -> ciano). */
+.card {
+  position: relative;
+  width: 100%;
+  max-width: var(--size-auth-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  background: var(--surface-glass);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-modal);
+  box-shadow: var(--glow-card);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--border-width) * -1);
+  padding: var(--border-width);
+  border-radius: inherit;
+  background: var(--gradient-neon);
+  opacity: 0.7;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.eyebrow {
+  color: var(--color-secondary-neon);
+  font-size: var(--font-size-helper);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  font-family: var(--font-brand);
+  font-size: var(--font-size-page-title);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-title);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+}
+
+/* Tablet (640-1023 px): marca maior e cartao centralizado. */
+@media (min-width: 640px) {
+  .brand {
+    padding: var(--space-8);
+  }
+
+  .logo {
+    width: calc(var(--space-8) * 8);
+  }
+
+  .main {
+    align-items: center;
+    padding: var(--space-8);
+  }
+}
+
+/* Desktop (>= 1024 px): identidade visual a esquerda, cartao a direita sobre o mesmo fundo. */
+@media (min-width: 1024px) {
+  .page {
+    flex-direction: row;
+    background:
+      linear-gradient(to right, color-mix(in srgb, var(--color-bg) 35%, transparent) 40%, color-mix(in srgb, var(--color-bg) 80%, transparent)),
+      url('../../../assets/brand/bg.webp') center / cover no-repeat,
+      var(--color-bg);
+  }
+
+  .brand {
+    flex: 3;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-8);
+    padding: var(--space-8);
+  }
+
+  .logo {
+    width: calc(var(--space-8) * 12);
+    max-width: 100%;
+  }
+
+  .hero {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    max-width: calc(var(--space-8) * 11);
+  }
+
+  .main {
+    flex: 2;
+  }
+}
+
+.slogan {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-brand);
+  font-size: calc(var(--space-8) + var(--space-6));
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-title);
+}
+
+.slogan span {
+  font-family: var(--font-brand);
+  font-style: italic;
+  text-transform: uppercase;
+  -webkit-text-stroke: var(--border-width) currentColor;
+}
+
+.sloganAccent {
+  color: var(--color-accent);
+  text-shadow: var(--glow-action);
+}
+
+.lead {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-section-title);
+}
+
+.benefits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-text);
+}
+
+.benefitIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  background: var(--surface-glass);
+  border: var(--border-width) solid color-mix(in srgb, var(--color-secondary-neon) 50%, transparent);
+  border-radius: var(--radius-control);
+  color: var(--color-secondary-neon);
+  font-size: var(--icon-size-large);
+}

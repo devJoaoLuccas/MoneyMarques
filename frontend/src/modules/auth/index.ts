@@ -1,0 +1,12 @@
+/** API publica do modulo de autenticacao: outros modulos e o app so importam daqui. */
+export { LogoutButton } from './components/LogoutButton'
+export { GuestOnly } from './guards/GuestOnly'
+export { RequireAuth } from './guards/RequireAuth'
+export { RequireFamilyContext } from './guards/RequireFamilyContext'
+export { RequireSessionStatus } from './guards/RequireSessionStatus'
+export { SessionGate } from './guards/SessionGate'
+export { useSession, sessionQueryKey } from './hooks/useSession'
+export { resolveDestination } from './navigation/resolve-destination'
+export { clearSelectedFamily, getSelectedFamily } from './state/selected-family'
+export { authGuestRoutes, authMfaRoutes, authPrivateRoutes, authPublicRoutes } from './routes'
+export type { SessionView } from './types'

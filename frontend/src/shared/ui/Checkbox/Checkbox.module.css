@@ -1,0 +1,18 @@
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+  cursor: pointer;
+}
+
+.input {
+  flex-shrink: 0;
+  width: var(--space-6);
+  height: var(--space-6);
+  margin: 0;
+  accent-color: var(--color-secondary-neon);
+  cursor: pointer;
+}
