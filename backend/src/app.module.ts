@@ -5,6 +5,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FamilyModule } from './modules/family/family.module';
 import { MailModule } from './modules/mail/mail.module';
+import { PainelModule } from './modules/painel/painel.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { PrismaModule } from './prisma/prisma.module';
     MailModule,
     AuthModule,
     FamilyModule,
+    PainelModule,
   ],
 })
 export class AppModule {}
