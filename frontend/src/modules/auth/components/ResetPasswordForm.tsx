@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import type { z } from 'zod'
 import { toApiError } from '../../../shared/lib/api-error'
@@ -9,8 +9,9 @@ import { paths } from '../../../shared/routes/paths'
 import { Alert, Button, PasswordField } from '../../../shared/ui'
 import { useResetPassword } from '../hooks/useAuthMutations'
 import { readTokenFromHash } from '../navigation/url-token'
-import { PASSWORD_HINT, resetPasswordSchema, type ResetPasswordFormValues } from '../schemas/auth.schemas'
+import { resetPasswordSchema, type ResetPasswordFormValues } from '../schemas/auth.schemas'
 import styles from './AuthForm.module.css'
+import { PasswordRequirements } from './PasswordRequirements'
 
 type ResetOutput = z.output<typeof resetPasswordSchema>
 
@@ -34,11 +35,14 @@ export function ResetPasswordForm() {
     register,
     handleSubmit,
     setError,
+    control,
     formState: { errors },
   } = useForm<ResetPasswordFormValues, unknown, ResetOutput>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { senha: '', confirmarSenha: '' },
   })
+
+  const senha = useWatch({ control, name: 'senha' })
 
   const onSubmit = handleSubmit(async ({ senha }) => {
     if (!token || resetPassword.isPending) return
@@ -87,10 +91,10 @@ export function ResetPasswordForm() {
       <PasswordField
         label="Nova senha"
         autoComplete="new-password"
-        hint={PASSWORD_HINT}
         error={errors.senha?.message}
         {...register('senha')}
       />
+      <PasswordRequirements value={senha} />
       <PasswordField
         label="Confirmar nova senha"
         autoComplete="new-password"

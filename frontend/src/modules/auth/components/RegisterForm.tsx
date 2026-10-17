@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import type { z } from 'zod'
 import { toApiError } from '../../../shared/lib/api-error'
@@ -8,8 +8,9 @@ import { applyFieldErrors, describeApiError } from '../../../shared/lib/form-err
 import { paths } from '../../../shared/routes/paths'
 import { Alert, Button, Checkbox, PasswordField, TextField } from '../../../shared/ui'
 import { useRegister } from '../hooks/useAuthMutations'
-import { PASSWORD_HINT, registerSchema, type RegisterFormValues } from '../schemas/auth.schemas'
+import { registerSchema, type RegisterFormValues } from '../schemas/auth.schemas'
 import styles from './AuthForm.module.css'
+import { PasswordRequirements } from './PasswordRequirements'
 
 type RegisterOutput = z.output<typeof registerSchema>
 
@@ -25,11 +26,14 @@ export function RegisterForm() {
     register,
     handleSubmit,
     setError,
+    control,
     formState: { errors },
   } = useForm<RegisterFormValues, unknown, RegisterOutput>({
     resolver: zodResolver(registerSchema),
     defaultValues: { nomeCompleto: '', email: '', senha: '', confirmarSenha: '', aceiteTermos: false },
   })
+
+  const senha = useWatch({ control, name: 'senha' })
 
   const onSubmit = handleSubmit(async (values) => {
     if (registerUser.isPending) return
@@ -79,10 +83,10 @@ export function RegisterForm() {
       <PasswordField
         label="Senha"
         autoComplete="new-password"
-        hint={PASSWORD_HINT}
         error={errors.senha?.message}
         {...register('senha')}
       />
+      <PasswordRequirements value={senha} />
       <PasswordField
         label="Confirmar senha"
         autoComplete="new-password"

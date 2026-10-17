@@ -17,9 +17,6 @@ const email = z
   .max(EMAIL_MAX_LENGTH, `O e-mail deve ter até ${EMAIL_MAX_LENGTH} caracteres.`)
   .pipe(z.email('Informe um e-mail válido.'))
 
-/** Texto de ajuda dos campos de nova senha. */
-export const PASSWORD_HINT = `Mínimo de ${PASSWORD_MIN_LENGTH} caracteres, com maiúscula, minúscula, número e caractere especial.`
-
 /** Regras de composicao da nova senha; espelham a politica do backend (CA-008). */
 export const PASSWORD_RULES = [
   { id: 'maiuscula', label: 'Uma letra maiúscula', pattern: /\p{Lu}/u },
