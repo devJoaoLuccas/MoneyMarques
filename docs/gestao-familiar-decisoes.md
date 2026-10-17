@@ -57,7 +57,7 @@
 
 ## 5. Código de convite (D-FAM-009) · decisões confirmadas com o responsável
 
-Alternativa ao convite por e-mail para facilitar a entrada (pessoa recebe o código por qualquer meio). Rotas: `POST /familias/:familiaUid/codigos-convite` (+ `GET`, `POST .../:codigoUid/revogar`) para administradores e `POST /convites/codigo/{previa,entrar}` para quem digita. Migration `20261019120000_codigo_convite_familia`.
+Alternativa ao convite por e-mail para facilitar a entrada (pessoa recebe o código por qualquer meio). Rotas: `POST /familias/:familiaUid/codigos-convite` (+ `GET`, `POST .../:codigoUid/revogar`) para administradores e `POST /convites/codigo/{previa,entrar}` para quem digita. Migrations `20261019120000_codigo_convite_familia` e `20261019130000_codigo_convite_copia_cifrada`.
 
 | Tema | Decisão |
 |---|---|
@@ -65,10 +65,12 @@ Alternativa ao convite por e-mail para facilitar a entrada (pessoa recebe o cód
 | Validade | **24 horas**. |
 | Papel | Escolhido na geração (**Integrante** ou **Visualizador**), nunca Administrador (validado no DTO e por CHECK no banco). Entra direto, sem aprovação. |
 | Formato | 8 caracteres de um alfabeto de 31 símbolos sem ambiguidade (`XXXX-XXXX`, ~39 bits). Digitação tolera minúsculas, espaços e hífen. |
-| Armazenamento | Só o HMAC do código. O código em claro aparece **uma única vez**, na resposta da geração; a lista nunca o devolve. |
+| Armazenamento | HMAC do código (para validar a entrada) **e**, enquanto o código está ATIVO, uma cópia cifrada AES-256-GCM com chave própria (`INVITE_CODE_ENCRYPTION_KEY`), para o administrador poder visualizá-lo de novo. A cópia é apagada ao usar, revogar ou expirar (CHECK no banco). A lista nunca devolve o código; `GET .../codigos-convite/ativo` o devolve só a administradores, sem cache e com auditoria (`codigo_convite.visualizar`). Código gerado antes da cópia cifrada existir não pode ser exibido: o sistema orienta revogar e gerar outro. |
+| Códigos ativos | **Um por família** (índice único parcial). Gerar com um ativo responde `INVITE_CODE_ACTIVE`; é preciso revogar ou esperar usar/expirar. |
 | Proteção | 5 tentativas **erradas** por usuário a cada 15 min (vale também para a prévia, que não serve de oráculo). Código malformado, inexistente, expirado, usado ou revogado dá a mesma resposta (`INVALID_INVITE_CODE`). |
 | Auditoria | `codigo_convite.emitir`, `.revogar`, `.usar` e `.tentativa` (falha), sem gravar o código digitado. |
 | Quem já é integrante | Não consome o código. |
 | Fluxo na tela | Prévia (nome da família, quem convidou, papel, validade) e só então "Entrar na família". A tela de primeiro acesso passou a oferecer **criar ou entrar**. |
+| Tela do administrador | Em "Convites enviados": botões **Enviar convite** e **Gerar código** (vira **Visualizar código** quando há código ativo) na linha do título; ambos abrem modal. |
 
 Lacunas: limite por IP (hoje só por usuário); notificação ao administrador quando o código é usado; limite de códigos ativos por família.
