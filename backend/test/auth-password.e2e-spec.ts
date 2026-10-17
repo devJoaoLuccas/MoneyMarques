@@ -13,7 +13,7 @@ import {
 describe('Autenticacao: recuperacao de senha (e2e)', () => {
   let ctx: TestContext;
   const email = 'ana@exemplo.com';
-  const newPassword = 'outra frase nova e segura';
+  const newPassword = 'Outra-Frase-Nova-Segura-1';
 
   beforeAll(async () => {
     ctx = await createTestContext();

@@ -59,7 +59,10 @@ describe('Autenticacao: cadastro, verificacao de e-mail e login (e2e)', () => {
       const res = await register(new ApiClient(ctx.server), { senha: 'curta' });
       expect(res.status).toBe(400);
       expect(res.body.code).toBe('VALIDATION_ERROR');
-      expect(res.body.errors.senha).toHaveLength(1);
+      expect(res.body.errors.senha).toContain(
+        'A senha deve ter pelo menos 12 caracteres.',
+      );
+      expect(res.body.errors.senha.length).toBeGreaterThan(1);
     });
 
     it('exige aceite dos termos e e-mail valido', async () => {
@@ -102,7 +105,7 @@ describe('Autenticacao: cadastro, verificacao de e-mail e login (e2e)', () => {
       ctx.mailbox.clear();
       const second = await register(new ApiClient(ctx.server), {
         nomeCompleto: 'Outra Pessoa',
-        senha: 'outra frase longa e segura',
+        senha: 'Outra-Frase-Longa-Segura-1',
       });
 
       expect(second.status).toBe(first.status);

@@ -116,7 +116,7 @@ export function withCookie(server: App, cookie: string) {
   };
 }
 
-export const strongPassword = 'frase longa e segura 2026';
+export const strongPassword = 'Frase-Longa-Segura-2026';
 
 export async function registerAndVerify(
   ctx: TestContext,

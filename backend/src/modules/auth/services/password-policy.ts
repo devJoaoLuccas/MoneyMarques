@@ -7,8 +7,9 @@ export interface PasswordPolicyContext {
 }
 
 /**
- * Politica de senha do servidor (CA-008): tamanho minimo/maximo, sem regras
- * arbitrarias de composicao, aceitando frases-senha. Retorna a lista de
+ * Politica de senha do servidor (CA-008): tamanho minimo/maximo e composicao
+ * (maiuscula, minuscula, numero e caractere especial). Caractere especial e
+ * qualquer simbolo que nao seja letra, numero ou espaco. Retorna a lista de
  * problemas (vazia quando a senha e aceita).
  */
 export function validatePasswordPolicy(
@@ -26,6 +27,18 @@ export function validatePasswordPolicy(
     problems.push(
       `A senha deve ter no maximo ${PASSWORD_MAX_LENGTH} caracteres.`,
     );
+  }
+  if (!/\p{Lu}/u.test(senha)) {
+    problems.push('A senha deve ter pelo menos uma letra maiuscula.');
+  }
+  if (!/\p{Ll}/u.test(senha)) {
+    problems.push('A senha deve ter pelo menos uma letra minuscula.');
+  }
+  if (!/\p{N}/u.test(senha)) {
+    problems.push('A senha deve ter pelo menos um numero.');
+  }
+  if (!/[^\p{L}\p{N}\s]/u.test(senha)) {
+    problems.push('A senha deve ter pelo menos um caractere especial.');
   }
   if (senha.length > 0 && new Set(senha).size === 1) {
     problems.push('A senha nao pode repetir um unico caractere.');
