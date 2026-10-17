@@ -84,33 +84,72 @@ describe('MembersPanel (FAM-003)', () => {
     expect(await screen.findByText('Bruno Souza')).toBeInTheDocument()
   })
 
-  it('alterar papel exige confirmacao e so entao chama a API', async () => {
+  it('Editar cargo abre um modal com as tres opcoes e o cargo atual marcado', async () => {
     renderWithProviders(<MembersPanel family={admin} />)
     const user = userEvent.setup()
-    await screen.findByText('Bruno Souza')
+    await user.click(await screen.findByRole('button', { name: /bruno souza/i }))
+    await user.click(screen.getByRole('menuitem', { name: 'Editar cargo' }))
 
-    await user.click(screen.getByRole('button', { name: /bruno souza/i }))
-    await user.click(screen.getByRole('menuitem', { name: 'Tornar Administrador' }))
-    const dialog = screen.getByRole('alertdialog')
-    expect(within(dialog).getByText(/de integrante para administrador/i)).toBeInTheDocument()
-    expect(familyService.changeRole).not.toHaveBeenCalled()
-
-    await user.click(within(dialog).getByRole('button', { name: /confirmar alteração/i }))
-    await waitFor(() => expect(familyService.changeRole).toHaveBeenCalledWith('f1', 'm2', 'ADMINISTRADOR'))
-    expect(await screen.findByText(/papel de bruno souza atualizado/i)).toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', { name: 'Editar cargo' })
+    expect(
+      within(dialog)
+        .getAllByRole('radio')
+        .map((r) => (r as HTMLInputElement).value),
+    ).toEqual(['ADMINISTRADOR', 'INTEGRANTE', 'VISUALIZADOR'])
+    expect(within(dialog).getByRole('radio', { name: /integrante/i })).toBeChecked()
+    expect(within(dialog).getByText('Atual')).toBeInTheDocument()
+    // Sem mudanca nao ha o que salvar.
+    expect(within(dialog).getByRole('button', { name: 'Salvar cargo' })).toBeDisabled()
   })
 
-  it('cancelar a confirmacao nao altera nada', async () => {
+  it('escolher outro cargo mostra o efeito e salva so ao confirmar', async () => {
     renderWithProviders(<MembersPanel family={admin} />)
     const user = userEvent.setup()
-    await screen.findByText('Bruno Souza')
+    await user.click(await screen.findByRole('button', { name: /bruno souza/i }))
+    await user.click(screen.getByRole('menuitem', { name: 'Editar cargo' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Editar cargo' })
 
-    await user.click(screen.getByRole('button', { name: /bruno souza/i }))
-    await user.click(screen.getByRole('menuitem', { name: 'Tornar Visualizador' }))
-    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: /cancelar/i }))
-
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    await user.click(within(dialog).getByRole('radio', { name: /administrador/i }))
+    expect(within(dialog).getByText(/Bruno Souza passará de Integrante para Administrador/)).toBeInTheDocument()
     expect(familyService.changeRole).not.toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar cargo' }))
+    await waitFor(() => expect(familyService.changeRole).toHaveBeenCalledWith('f1', 'm2', 'ADMINISTRADOR'))
+    expect(await screen.findByText(/cargo de bruno souza atualizado para administrador/i)).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('cancelar nao altera nada', async () => {
+    renderWithProviders(<MembersPanel family={admin} />)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /bruno souza/i }))
+    await user.click(screen.getByRole('menuitem', { name: 'Editar cargo' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Editar cargo' })
+    await user.click(within(dialog).getByRole('radio', { name: /visualizador/i }))
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(familyService.changeRole).not.toHaveBeenCalled()
+  })
+
+  it('erro do servidor (ultimo administrador) aparece no modal, que continua aberto', async () => {
+    vi.mocked(familyService.changeRole).mockRejectedValue(
+      new ApiError({
+        status: 409,
+        code: 'LAST_ADMIN_REQUIRED',
+        message: 'A família precisa de pelo menos um administrador ativo.',
+      }),
+    )
+    renderWithProviders(<MembersPanel family={admin} />)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /ana admin/i }))
+    await user.click(screen.getByRole('menuitem', { name: 'Editar cargo' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Editar cargo' })
+    await user.click(within(dialog).getByRole('radio', { name: /visualizador/i }))
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar cargo' }))
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(/pelo menos um administrador ativo/i)
+    expect(screen.getByRole('dialog', { name: 'Editar cargo' })).toBeInTheDocument()
   })
 
   it('CA-FAM-011: remover descreve o efeito, confirma e chama a API', async () => {
@@ -167,17 +206,16 @@ describe('MembersPanel (FAM-003)', () => {
     expect(screen.queryByRole('button', { name: /carla lima/i })).not.toBeInTheDocument()
   })
 
-  it('o card do integrante abre um menu com as trocas de papel possiveis e a remocao', async () => {
+  it('o card do integrante abre um menu com Editar cargo e Remover da familia', async () => {
     renderWithProviders(<MembersPanel family={admin} />)
     const user = userEvent.setup()
     await user.click(await screen.findByRole('button', { name: /bruno souza/i }))
     const menu = screen.getByRole('menu', { name: 'Ações para Bruno Souza' })
-    // Bruno e Integrante: so as outras duas opcoes de papel, mais remover.
     expect(
       within(menu)
         .getAllByRole('menuitem')
         .map((i) => i.textContent),
-    ).toEqual(['Tornar Administrador', 'Tornar Visualizador', 'Remover da família'])
+    ).toEqual(['Editar cargo', 'Remover da família'])
   })
 
   it('paginacao: avanca para a proxima pagina', async () => {

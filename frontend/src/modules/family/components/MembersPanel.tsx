@@ -13,8 +13,9 @@ import {
   SelectField,
   TextField,
 } from '../../../shared/ui'
-import { useChangeRole, useMembers, useRemoveMember, type ActiveFamily } from '../hooks/useFamily'
+import { useMembers, useRemoveMember, type ActiveFamily } from '../hooks/useFamily'
 import { ROLE_LABELS, ROLE_OPTIONS } from '../schemas/family.schemas'
+import { EditRoleDialog } from './EditRoleDialog'
 import type { FamilyRole, Member, MembersQuery } from '../types'
 import styles from './FamilyPanels.module.css'
 
@@ -22,7 +23,7 @@ interface MembersPanelProps {
   family: ActiveFamily
 }
 
-type PendingAction = { type: 'role'; member: Member; papel: FamilyRole } | { type: 'remove'; member: Member }
+type PendingAction = { type: 'role'; member: Member } | { type: 'remove'; member: Member }
 
 const ALL = ''
 const ROLE_FILTER = [{ value: ALL, label: 'Todos os papéis' }, ...ROLE_OPTIONS]
@@ -56,15 +57,15 @@ interface MemberItemProps {
   /** Administrador gerenciando um integrante ativo: o card abre o menu de acoes. */
   canManage: boolean
   disabled: boolean
-  onChangeRole: (papel: FamilyRole) => void
+  onEditRole: () => void
   onRemove: () => void
 }
 
 /**
  * Para administradores, o card de um integrante ativo abre um menu com as
- * mudancas de papel possiveis e a remocao. Os demais cards nao sao clicaveis.
+ * edicao de cargo e a remocao. Os demais cards nao sao clicaveis.
  */
-function MemberItem({ member, canManage, disabled, onChangeRole, onRemove }: MemberItemProps) {
+function MemberItem({ member, canManage, disabled, onEditRole, onRemove }: MemberItemProps) {
   if (!canManage) {
     return (
       <li className={styles.card}>
@@ -74,17 +75,15 @@ function MemberItem({ member, canManage, disabled, onChangeRole, onRemove }: Mem
       </li>
     )
   }
-  const roleItems = ROLE_OPTIONS.filter((option) => option.value !== member.papel).map((option) => ({
-    label: `Tornar ${option.label}`,
-    onSelect: () => onChangeRole(option.value),
-    disabled,
-  }))
   return (
     <li>
       <ActionMenu
         menuLabel={`Ações para ${member.nome}`}
         triggerClassName={styles.cardTrigger}
-        items={[...roleItems, { label: 'Remover da família', onSelect: onRemove, destructive: true, disabled }]}
+        items={[
+          { label: 'Editar cargo', onSelect: onEditRole, disabled },
+          { label: 'Remover da família', onSelect: onRemove, destructive: true, disabled },
+        ]}
       >
         <MemberSummary member={member} inline />
       </ActionMenu>
@@ -113,9 +112,8 @@ export function MembersPanel({ family }: MembersPanelProps) {
     situacao: isAdmin ? situacao : undefined,
   }
   const members = useMembers(family.uid, query)
-  const changeRole = useChangeRole(family.uid)
   const removeMember = useRemoveMember(family.uid)
-  const working = changeRole.isPending || removeMember.isPending
+  const working = removeMember.isPending
 
   function resetPage<T>(setter: (value: T) => void) {
     return (value: T) => {
@@ -124,19 +122,11 @@ export function MembersPanel({ family }: MembersPanelProps) {
     }
   }
 
-  async function confirm() {
-    if (!pending) return
+  async function confirmRemove() {
+    if (pending?.type !== 'remove') return
     try {
-      if (pending.type === 'role') {
-        await changeRole.mutateAsync({
-          integranteUid: pending.member.uid,
-          papel: pending.papel,
-        })
-        notify.success(`Papel de ${pending.member.nome} atualizado.`)
-      } else {
-        await removeMember.mutateAsync(pending.member.uid)
-        notify.success(`${pending.member.nome} foi removido(a) da família.`)
-      }
+      await removeMember.mutateAsync(pending.member.uid)
+      notify.success(`${pending.member.nome} foi removido(a) da família.`)
     } catch (cause) {
       notify.error(describeApiError(toApiError(cause)))
     } finally {
@@ -196,7 +186,7 @@ export function MembersPanel({ family }: MembersPanelProps) {
               member={member}
               canManage={isAdmin && member.situacao === 'ATIVO'}
               disabled={working}
-              onChangeRole={(papel) => setPending({ type: 'role', member, papel })}
+              onEditRole={() => setPending({ type: 'role', member })}
               onRemove={() => setPending({ type: 'remove', member })}
             />
           ))}
@@ -222,19 +212,7 @@ export function MembersPanel({ family }: MembersPanelProps) {
       )}
 
       {pending?.type === 'role' && (
-        <ConfirmDialog
-          title="Alterar papel"
-          confirmLabel="Confirmar alteração"
-          loading={changeRole.isPending}
-          onConfirm={() => void confirm()}
-          onCancel={() => setPending(null)}
-        >
-          <p>
-            {pending.member.nome} passará de {ROLE_LABELS[pending.member.papel]} para {ROLE_LABELS[pending.papel]}.
-            {pending.papel === 'ADMINISTRADOR' &&
-              ' Administradores gerenciam integrantes, convites e configurações da família.'}
-          </p>
-        </ConfirmDialog>
+        <EditRoleDialog familiaUid={family.uid} member={pending.member} onClose={() => setPending(null)} />
       )}
       {pending?.type === 'remove' && (
         <ConfirmDialog
@@ -242,7 +220,7 @@ export function MembersPanel({ family }: MembersPanelProps) {
           confirmLabel="Remover da família"
           destructive
           loading={removeMember.isPending}
-          onConfirm={() => void confirm()}
+          onConfirm={() => void confirmRemove()}
           onCancel={() => setPending(null)}
         >
           <p>
