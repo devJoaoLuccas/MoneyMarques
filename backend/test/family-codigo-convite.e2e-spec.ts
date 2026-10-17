@@ -216,7 +216,7 @@ describe('Codigo de convite da familia (e2e)', () => {
       .expect(204);
     const bia = await signup('bia@exemplo.com');
 
-    const respostas = [];
+    const respostas: { code: string }[] = [];
     for (const codigo of [
       expirado.codigo,
       revogado.codigo,

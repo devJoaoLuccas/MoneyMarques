@@ -19,6 +19,10 @@ export type ApiErrorCode =
   | 'ALREADY_MEMBER'
   | 'INVITE_ALREADY_PENDING'
   | 'INVITE_NOT_PENDING'
+  | 'BAD_REQUEST'
+  | 'CONFLICT'
+  | 'PAYLOAD_TOO_LARGE'
+  | 'SERVICE_UNAVAILABLE'
   | 'INTERNAL_ERROR';
 
 export type FieldErrors = Record<string, string[]>;

@@ -3,20 +3,21 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
-  HttpStatus,
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiErrorBody, ApiErrorCode } from './api-exception';
-
-const DEFAULT_CODES: Partial<Record<number, ApiErrorCode>> = {
-  [HttpStatus.NOT_FOUND]: 'NOT_FOUND',
-  [HttpStatus.UNAUTHORIZED]: 'UNAUTHENTICATED',
-};
+import { ApiErrorBody } from './api-exception';
+import {
+  friendlyForDatabaseError,
+  friendlyForStatus,
+  GENERIC_ERROR,
+  statusOfHttpLikeError,
+} from './error-messages';
 
 /**
- * Normaliza todas as respostas de erro para ApiErrorBody e nunca vaza
- * detalhes internos (stack, mensagens de banco) para o cliente.
+ * Normaliza todas as respostas de erro para ApiErrorBody em portugues e nunca
+ * vaza detalhes internos (stack, SQL, nomes de tabela/campo, mensagens do
+ * framework) para o cliente. O detalhe tecnico vai somente para o log.
  */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -34,8 +35,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   private toBody(exception: unknown): ApiErrorBody {
     if (exception instanceof HttpException) {
-      const status = exception.getStatus();
       const payload = exception.getResponse();
+      // Erros da aplicacao (ApiException) ja trazem codigo e texto para o usuario.
       if (
         typeof payload === 'object' &&
         payload !== null &&
@@ -43,20 +44,40 @@ export class HttpExceptionFilter implements ExceptionFilter {
       ) {
         return payload as ApiErrorBody;
       }
-      return {
-        statusCode: status,
-        code: DEFAULT_CODES[status] ?? 'INTERNAL_ERROR',
-        message: exception.message,
-      };
+      // Excecoes do proprio framework ("Cannot GET /x", "Forbidden resource"...):
+      // o texto original e tecnico e em ingles, entao e trocado por um amigavel.
+      const status = exception.getStatus();
+      this.log(exception, status);
+      return friendlyForStatus(status);
     }
 
-    this.logger.error(
-      exception instanceof Error ? exception.stack : String(exception),
-    );
-    return {
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      code: 'INTERNAL_ERROR',
-      message: 'Ocorreu um erro inesperado. Tente novamente em instantes.',
-    };
+    const database = friendlyForDatabaseError(exception);
+    if (database) {
+      this.log(exception, database.statusCode);
+      return database;
+    }
+
+    // Erros de middleware (corpo JSON malformado, corpo grande demais...).
+    const status = statusOfHttpLikeError(exception);
+    if (status !== null) {
+      this.log(exception, status);
+      return friendlyForStatus(status);
+    }
+
+    this.log(exception, GENERIC_ERROR.statusCode);
+    return GENERIC_ERROR;
+  }
+
+  /** Detalhe tecnico so no log do servidor; 4xx sao ruido esperado, entao so um aviso curto. */
+  private log(exception: unknown, status: number): void {
+    if (status >= 500) {
+      this.logger.error(
+        exception instanceof Error ? exception.stack : String(exception),
+      );
+    } else {
+      this.logger.warn(
+        `${status} ${exception instanceof Error ? exception.message : String(exception)}`,
+      );
+    }
   }
 }
