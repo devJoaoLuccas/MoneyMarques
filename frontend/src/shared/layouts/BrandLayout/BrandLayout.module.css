@@ -53,6 +53,10 @@
   -webkit-backdrop-filter: blur(var(--blur-glass));
 }
 
+.cardWide {
+  max-width: var(--size-card-wide);
+}
+
 .card::before {
   content: '';
   position: absolute;

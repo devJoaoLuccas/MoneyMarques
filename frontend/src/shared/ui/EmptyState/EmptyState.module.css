@@ -1,0 +1,19 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  border: var(--border-width) dashed var(--color-border);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+
+.title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.body {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+}

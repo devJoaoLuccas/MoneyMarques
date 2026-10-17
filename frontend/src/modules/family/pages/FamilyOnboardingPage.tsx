@@ -1,15 +1,15 @@
-import { LogoutButton } from '../../auth'
 import { BrandLayout } from '../../../shared/layouts/BrandLayout/BrandLayout'
+import { CreateFamilyForm } from '../components/CreateFamilyForm'
 
-/**
- * Destino da transicao AUTH-005 para quem ainda nao tem familia.
- * A criacao de familias pertence ao modulo Gestao Familiar (RF-001), ainda nao implementado.
- */
+/** Destino da transicao AUTH-005 para quem ainda nao tem familia (FAM-001). */
 export function FamilyOnboardingPage() {
   return (
-    <BrandLayout title="Crie sua família" subtitle="Falta pouco para começar.">
-      <p>A criação do grupo familiar será liberada no módulo de Gestão Familiar.</p>
-      <LogoutButton />
+    <BrandLayout
+      eyebrow="Primeiro passo"
+      title="Crie sua família"
+      subtitle="Reúna as finanças de quem divide a vida com você. Você será o administrador."
+    >
+      <CreateFamilyForm />
     </BrandLayout>
   )
 }

@@ -3,12 +3,16 @@ import { render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authService } from '../../modules/auth/services/auth.service'
+import { familyService } from '../../modules/family/services/family.service'
 import type { SessionView } from '../../modules/auth/types'
 import { createTestQueryClient } from '../../test/render'
 import { appRoutes } from './app-routes'
 
 vi.mock('../../modules/auth/services/auth.service', () => ({
   authService: { getSession: vi.fn(), logout: vi.fn() },
+}))
+vi.mock('../../modules/family/services/family.service', () => ({
+  familyService: { listMembers: vi.fn(), listInvites: vi.fn() },
 }))
 
 const authenticated: SessionView = {
@@ -70,6 +74,39 @@ describe('rotas da aplicacao (composicao dos modulos)', () => {
     const router = renderApp('/')
     expect(await screen.findByRole('heading', { level: 1, name: /olá, ana/i })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/app')
+  })
+
+  it('o link de convite do e-mail e publico e orienta o visitante a entrar (FAM-005)', async () => {
+    vi.mocked(authService.getSession).mockResolvedValue({ status: 'auth_required' })
+    const router = renderApp('/convite#token=abc')
+    expect(await screen.findByRole('heading', { level: 1, name: /convite para uma família/i })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Entrar' })).toHaveAttribute('href', '/login')
+    expect(router.state.location.pathname).toBe('/convite')
+  })
+
+  it('a gestao de integrantes abre para quem tem familia ativa (FAM-003)', async () => {
+    vi.mocked(authService.getSession).mockResolvedValue(authenticated)
+    vi.mocked(familyService.listMembers).mockResolvedValue({ itens: [], pagina: 1, tamanho: 10, total: 0 })
+    renderApp('/familia/integrantes')
+    expect(await screen.findByRole('heading', { level: 1, name: /integrantes/i })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: /gestão da família/i })).toBeInTheDocument()
+  })
+
+  it('convites enviados abre para o administrador e a tela de gestao exige familia (FAM-005)', async () => {
+    vi.mocked(authService.getSession).mockResolvedValue(authenticated)
+    vi.mocked(familyService.listInvites).mockResolvedValue({ itens: [], pagina: 1, tamanho: 10, total: 0 })
+    renderApp('/familia/convites-enviados')
+    expect(await screen.findByRole('heading', { level: 1, name: /convites enviados/i })).toBeInTheDocument()
+  })
+
+  it('sem familia, a gestao de integrantes leva ao onboarding', async () => {
+    vi.mocked(authService.getSession).mockResolvedValue({
+      ...authenticated,
+      contexto: { tipo: 'sem_familia', familias: [], convitesPendentes: [] },
+    } as SessionView)
+    const router = renderApp('/familia/integrantes')
+    expect(await screen.findByRole('heading', { level: 1, name: /crie sua família/i })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/familia/nova')
   })
 
   it('a verificacao MFA so abre com MFA pendente', async () => {

@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { FiBarChart2, FiTarget, FiAward } from 'react-icons/fi'
 import logoHorizontal from '../../../assets/brand/logo-horizontal.webp'
+import { cn } from '../../lib/cn'
 import styles from './BrandLayout.module.css'
 
 interface BrandLayoutProps {
@@ -12,6 +13,8 @@ interface BrandLayoutProps {
   slogan?: readonly string[]
   /** Texto de apoio abaixo do slogan. */
   lead?: string
+  /** Cartao mais largo para listas (integrantes, convites). */
+  wide?: boolean
   children: ReactNode
 }
 
@@ -35,6 +38,7 @@ export function BrandLayout({
   eyebrow,
   slogan = defaultSlogan,
   lead = defaultLead,
+  wide = false,
   children,
 }: BrandLayoutProps) {
   const titleId = useId()
@@ -66,7 +70,7 @@ export function BrandLayout({
       </header>
 
       <main className={styles.main}>
-        <section className={styles.card} aria-labelledby={titleId}>
+        <section className={cn(styles.card, wide && styles.cardWide)} aria-labelledby={titleId}>
           <header className={styles.header}>
             {eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}
             <h1 id={titleId} className={styles.title}>

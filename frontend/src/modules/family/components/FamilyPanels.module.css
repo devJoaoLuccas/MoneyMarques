@@ -1,0 +1,198 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface-field);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.cardTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-card-title);
+  font-weight: var(--font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.cardMeta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+  overflow-wrap: anywhere;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.badge {
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid var(--color-secondary-neon);
+  border-radius: var(--radius-control);
+  color: var(--color-secondary-neon);
+  font-size: var(--font-size-helper);
+  font-weight: var(--font-weight-medium);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-text-small);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  border-color: var(--color-secondary-neon);
+  color: var(--color-text-primary);
+}
+
+.navLinkActive {
+  border-color: var(--color-secondary-neon);
+  color: var(--color-text-primary);
+}
+
+.linkButton {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--color-secondary-neon);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Escolha do icone da familia */
+.avatars {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-size: var(--font-size-text-small);
+  font-weight: var(--font-weight-medium);
+}
+
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.avatarOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: var(--space-2);
+  background: var(--surface-field);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.avatarOption:hover {
+  border-color: var(--color-secondary-neon);
+}
+
+.avatarOption:has(input:checked) {
+  border-color: var(--color-secondary-neon);
+  color: var(--color-text-primary);
+  box-shadow: var(--glow-focus);
+}
+
+.avatarOption:has(input:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-width);
+}
+
+.avatarImage {
+  width: calc(var(--space-8) * 2);
+  height: calc(var(--space-8) * 2);
+  object-fit: contain;
+}
+
+.avatarLabel {
+  font-size: var(--font-size-helper);
+}
+
+.fieldError {
+  margin-top: var(--space-1);
+  color: var(--color-negative);
+  font-size: var(--font-size-helper);
+}
+
+@media (min-width: 640px) {
+  .card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .filters {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+
+  .avatarGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

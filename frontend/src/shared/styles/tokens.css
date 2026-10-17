@@ -53,6 +53,7 @@
   /* Areas de toque (minimo 44 x 44 px) e largura do cartao de autenticacao */
   --touch-target: 44px;
   --size-auth-card: 440px;
+  --size-card-wide: 720px;
 
   /* Tipografia */
   --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;

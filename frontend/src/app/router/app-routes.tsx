@@ -10,7 +10,7 @@ import {
   RequireSessionStatus,
 } from '../../modules/auth'
 import { dashboardRoutes } from '../../modules/dashboard/routes'
-import { familyRoutes } from '../../modules/family/routes'
+import { familyManagementRoutes, familyPublicRoutes, familyRoutes } from '../../modules/family'
 import { legalRoutes } from '../../modules/legal/routes'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { RootRedirect } from '../pages/RootRedirect'
@@ -24,13 +24,14 @@ export const appRoutes: RouteObject[] = [
   { element: <GuestOnly />, children: authGuestRoutes },
   ...authPublicRoutes,
   ...legalRoutes,
+  ...familyPublicRoutes,
   { element: <RequireSessionStatus status="mfa_required" />, children: authMfaRoutes },
   {
     element: <RequireAuth />,
     children: [
       ...authPrivateRoutes,
       ...familyRoutes,
-      { element: <RequireFamilyContext />, children: dashboardRoutes },
+      { element: <RequireFamilyContext />, children: [...dashboardRoutes, ...familyManagementRoutes] },
     ],
   },
   { path: '*', element: <NotFoundPage /> },

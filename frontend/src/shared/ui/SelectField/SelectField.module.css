@@ -1,0 +1,8 @@
+.select {
+  cursor: pointer;
+}
+
+.select option {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
