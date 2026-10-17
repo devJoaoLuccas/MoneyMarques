@@ -144,12 +144,23 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
             <li key={invite.uid} className={styles.card}>
               <div className={styles.cardInfo}>
                 <p className={styles.cardTitle}>
-                  {invite.email}
+                  {invite.origem === 'codigo' ? (invite.nome ?? invite.email) : invite.email}
                   <span className={styles.badge}>{STATUS_LABELS[invite.situacao]}</span>
+                  {invite.origem === 'codigo' && <span className={styles.badge}>Por código</span>}
                 </p>
                 <p className={styles.cardMeta}>
-                  {ROLE_LABELS[invite.papel]} · Enviado em {formatDate(invite.criadoEm)}
-                  {invite.situacao === 'PENDENTE' && ` · Válido até ${formatDate(invite.expiraEm)}`}
+                  {invite.origem === 'codigo' ? (
+                    <>
+                      {invite.nome && `${invite.email} · `}
+                      {ROLE_LABELS[invite.papel]} · Código gerado em {formatDate(invite.criadoEm)}
+                      {invite.respondidoEm && ` · Entrou em ${formatDate(invite.respondidoEm)}`}
+                    </>
+                  ) : (
+                    <>
+                      {ROLE_LABELS[invite.papel]} · Enviado em {formatDate(invite.criadoEm)}
+                      {invite.situacao === 'PENDENTE' && ` · Válido até ${formatDate(invite.expiraEm)}`}
+                    </>
+                  )}
                 </p>
               </div>
               {invite.situacao === 'PENDENTE' && (

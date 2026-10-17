@@ -26,6 +26,11 @@ export type InviteStatus = 'PENDENTE' | 'ACEITO' | 'RECUSADO' | 'EXPIRADO' | 'RE
 
 export interface Invite {
   uid: string
+  /** `email`: convite enviado por e-mail. `codigo`: entrada por codigo de convite ja usado. */
+  origem: 'email' | 'codigo'
+  /** Nome de quem entrou (so em `origem: 'codigo'`). */
+  nome: string | null
+  /** Destinatario do convite; em `origem: 'codigo'`, o e-mail de quem entrou. */
   email: string
   papel: FamilyRole
   situacao: InviteStatus

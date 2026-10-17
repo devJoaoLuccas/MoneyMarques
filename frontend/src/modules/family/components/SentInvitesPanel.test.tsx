@@ -25,6 +25,8 @@ const family: ActiveFamily = { uid: 'f1', nome: 'Silva', papel: 'ADMINISTRADOR' 
 
 const invite = (over: Partial<Invite> = {}): Invite => ({
   uid: 'c1',
+  origem: 'email',
+  nome: null,
   email: 'bruno@exemplo.com',
   papel: 'INTEGRANTE',
   situacao: 'PENDENTE',
@@ -66,6 +68,37 @@ describe('SentInvitesPanel (FAM-005, D-FAM-009)', () => {
     expect(screen.getAllByText('Pendente').length).toBeGreaterThan(0)
     expect(screen.getByText(/enviado em 18\/10\/2026/i)).toBeInTheDocument()
     expect(screen.getByText(/válido até 25\/10\/2026/i)).toBeInTheDocument()
+  })
+
+  it('codigo usado aparece como convite aceito, no mesmo padrao, com quem entrou', async () => {
+    vi.mocked(familyService.listInvites).mockResolvedValue(
+      page([
+        invite({
+          uid: 'k9',
+          origem: 'codigo',
+          nome: 'Bia Souza',
+          email: 'bia@exemplo.com',
+          papel: 'VISUALIZADOR',
+          situacao: 'ACEITO',
+          criadoEm: '2026-10-18T12:00:00.000Z',
+          respondidoEm: '2026-10-19T09:00:00.000Z',
+        }),
+        invite(),
+      ]),
+    )
+    renderWithProviders(<SentInvitesPanel family={family} />)
+    const titulo = await screen.findByText('Bia Souza')
+    const cartao = titulo.closest('li') as HTMLElement
+    expect(within(cartao).getByText('Aceito')).toBeInTheDocument()
+    expect(within(cartao).getByText('Por código')).toBeInTheDocument()
+    expect(
+      within(cartao).getByText(
+        /bia@exemplo.com · Visualizador · Código gerado em 18\/10\/2026 · Entrou em 19\/10\/2026/,
+      ),
+    ).toBeInTheDocument()
+    // Convite por e-mail segue igual, e o codigo usado nao oferece reenviar/revogar.
+    expect(screen.getByText('bruno@exemplo.com')).toBeInTheDocument()
+    expect(within(cartao).queryByRole('button')).not.toBeInTheDocument()
   })
 
   it('titulo e os dois botoes de acao ficam na mesma linha', async () => {
