@@ -54,3 +54,21 @@
 | Resposta neutra / sem enumeração de contas | e2e `family` (convite para e-mail com e sem conta) |
 | RN-FAM-013 (auditoria) | e2e `family` (criar, papel, remover, convite emitir/revogar/aceitar, acesso negado) |
 | Feedback de carregar/vazio/erro/sucesso, confirmações | `MembersPanel.test`, `SentInvitesPanel.test`, `PendingInvitesList.test`, `ConfirmDialog.test` |
+
+## 5. Código de convite (D-FAM-009) · decisões confirmadas com o responsável
+
+Alternativa ao convite por e-mail para facilitar a entrada (pessoa recebe o código por qualquer meio). Rotas: `POST /familias/:familiaUid/codigos-convite` (+ `GET`, `POST .../:codigoUid/revogar`) para administradores e `POST /convites/codigo/{previa,entrar}` para quem digita. Migration `20261019120000_codigo_convite_familia`.
+
+| Tema | Decisão |
+|---|---|
+| Uso | **Único**: o código é consumido por quem entra (transação com `FOR UPDATE`; uso concorrente gera um só vínculo). |
+| Validade | **24 horas**. |
+| Papel | Escolhido na geração (**Integrante** ou **Visualizador**), nunca Administrador (validado no DTO e por CHECK no banco). Entra direto, sem aprovação. |
+| Formato | 8 caracteres de um alfabeto de 31 símbolos sem ambiguidade (`XXXX-XXXX`, ~39 bits). Digitação tolera minúsculas, espaços e hífen. |
+| Armazenamento | Só o HMAC do código. O código em claro aparece **uma única vez**, na resposta da geração; a lista nunca o devolve. |
+| Proteção | 5 tentativas **erradas** por usuário a cada 15 min (vale também para a prévia, que não serve de oráculo). Código malformado, inexistente, expirado, usado ou revogado dá a mesma resposta (`INVALID_INVITE_CODE`). |
+| Auditoria | `codigo_convite.emitir`, `.revogar`, `.usar` e `.tentativa` (falha), sem gravar o código digitado. |
+| Quem já é integrante | Não consome o código. |
+| Fluxo na tela | Prévia (nome da família, quem convidou, papel, validade) e só então "Entrar na família". A tela de primeiro acesso passou a oferecer **criar ou entrar**. |
+
+Lacunas: limite por IP (hoje só por usuário); notificação ao administrador quando o código é usado; limite de códigos ativos por família.
