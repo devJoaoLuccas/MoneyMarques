@@ -1,7 +1,10 @@
 export interface MailMessage {
   to: string;
   subject: string;
+  /** Versao em texto puro (alternativa para clientes sem HTML). */
   text: string;
+  /** Versao HTML renderizada pelo template base. */
+  html?: string;
 }
 
 /**

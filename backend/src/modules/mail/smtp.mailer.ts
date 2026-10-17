@@ -9,6 +9,7 @@ export interface SmtpTransport {
     to: string;
     subject: string;
     text: string;
+    html?: string;
   }): Promise<unknown>;
 }
 
@@ -40,6 +41,7 @@ export class SmtpMailer extends MailPort {
       to: message.to,
       subject: message.subject,
       text: message.text,
+      html: message.html,
     });
   }
 }

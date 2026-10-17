@@ -5,6 +5,7 @@ describe('SmtpMailer', () => {
     to: 'ana@exemplo.com',
     subject: 'Assunto',
     text: 'Corpo com link #token=abc123',
+    html: '<p>Corpo com link #token=abc123</p>',
   };
 
   it('envia pelo transporte usando o remetente configurado', async () => {
@@ -21,6 +22,7 @@ describe('SmtpMailer', () => {
       to: 'ana@exemplo.com',
       subject: 'Assunto',
       text: 'Corpo com link #token=abc123',
+      html: '<p>Corpo com link #token=abc123</p>',
     });
   });
 
