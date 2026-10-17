@@ -3,7 +3,7 @@ import { LuKeyRound, LuUserPlus } from 'react-icons/lu'
 import { toApiError } from '../../../shared/lib/api-error'
 import { describeApiError } from '../../../shared/lib/form-errors'
 import { formatDate } from '../../../shared/lib/format-date'
-import { Alert, Button, ConfirmDialog, EmptyState, LoadingIndicator, SelectField } from '../../../shared/ui'
+import { ActionMenu, Alert, Button, ConfirmDialog, EmptyState, LoadingIndicator, SelectField } from '../../../shared/ui'
 import { useInviteCodes, useInvites, useResendInvite, useRevokeInvite, type ActiveFamily } from '../hooks/useFamily'
 import { ROLE_LABELS } from '../schemas/family.schemas'
 import type { Invite, InviteStatus } from '../types'
@@ -27,6 +27,71 @@ const STATUS_FILTER = [
   { value: '', label: 'Todas as situações' },
   ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
 ]
+
+/** Titulo e detalhes do convite; `inline` troca <p> por <span> (conteudo de um botao so aceita texto em linha). */
+function InviteSummary({ invite, inline }: { invite: Invite; inline: boolean }) {
+  const Tag = inline ? 'span' : 'p'
+  return (
+    <>
+      <Tag className={styles.cardTitle}>
+        {invite.origem === 'codigo' ? (invite.nome ?? invite.email) : invite.email}
+        <span className={styles.badge}>{STATUS_LABELS[invite.situacao]}</span>
+        {invite.origem === 'codigo' && <span className={styles.badge}>Por código</span>}
+      </Tag>
+      <Tag className={styles.cardMeta}>
+        {invite.origem === 'codigo' ? (
+          <>
+            {invite.nome && `${invite.email} · `}
+            {ROLE_LABELS[invite.papel]} · Código gerado em {formatDate(invite.criadoEm)}
+            {invite.respondidoEm && ` · Entrou em ${formatDate(invite.respondidoEm)}`}
+          </>
+        ) : (
+          <>
+            {ROLE_LABELS[invite.papel]} · Enviado em {formatDate(invite.criadoEm)}
+            {invite.situacao === 'PENDENTE' && ` · Válido até ${formatDate(invite.expiraEm)}`}
+          </>
+        )}
+      </Tag>
+    </>
+  )
+}
+
+interface InviteItemProps {
+  invite: Invite
+  resendDisabled: boolean
+  onResend: () => void
+  onRevoke: () => void
+}
+
+/**
+ * Convite pendente: o card inteiro abre um menu com Reenviar e Revogar.
+ * Convites ja respondidos e codigos usados nao tem acoes, entao o card nao e clicavel.
+ */
+function InviteItem({ invite, resendDisabled, onResend, onRevoke }: InviteItemProps) {
+  if (invite.situacao !== 'PENDENTE') {
+    return (
+      <li className={styles.card}>
+        <div className={styles.cardInfo}>
+          <InviteSummary invite={invite} inline={false} />
+        </div>
+      </li>
+    )
+  }
+  return (
+    <li>
+      <ActionMenu
+        menuLabel={`Ações do convite para ${invite.email}`}
+        triggerClassName={styles.cardTrigger}
+        items={[
+          { label: 'Reenviar convite', onSelect: onResend, disabled: resendDisabled },
+          { label: 'Revogar convite', onSelect: onRevoke, destructive: true },
+        ]}
+      >
+        <InviteSummary invite={invite} inline />
+      </ActionMenu>
+    </li>
+  )
+}
 
 type Modal = 'convite' | 'codigo' | null
 
@@ -141,48 +206,13 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
       {invites.data && invites.data.itens.length > 0 && (
         <ul className={styles.list}>
           {invites.data.itens.map((invite) => (
-            <li key={invite.uid} className={styles.card}>
-              <div className={styles.cardInfo}>
-                <p className={styles.cardTitle}>
-                  {invite.origem === 'codigo' ? (invite.nome ?? invite.email) : invite.email}
-                  <span className={styles.badge}>{STATUS_LABELS[invite.situacao]}</span>
-                  {invite.origem === 'codigo' && <span className={styles.badge}>Por código</span>}
-                </p>
-                <p className={styles.cardMeta}>
-                  {invite.origem === 'codigo' ? (
-                    <>
-                      {invite.nome && `${invite.email} · `}
-                      {ROLE_LABELS[invite.papel]} · Código gerado em {formatDate(invite.criadoEm)}
-                      {invite.respondidoEm && ` · Entrou em ${formatDate(invite.respondidoEm)}`}
-                    </>
-                  ) : (
-                    <>
-                      {ROLE_LABELS[invite.papel]} · Enviado em {formatDate(invite.criadoEm)}
-                      {invite.situacao === 'PENDENTE' && ` · Válido até ${formatDate(invite.expiraEm)}`}
-                    </>
-                  )}
-                </p>
-              </div>
-              {invite.situacao === 'PENDENTE' && (
-                <div className={styles.cardActions}>
-                  <Button
-                    variant="secondary"
-                    disabled={resend.isPending}
-                    aria-label={`Reenviar convite para ${invite.email}`}
-                    onClick={() => void resendInvite(invite)}
-                  >
-                    Reenviar
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    aria-label={`Revogar convite para ${invite.email}`}
-                    onClick={() => setRevoking(invite)}
-                  >
-                    Revogar
-                  </Button>
-                </div>
-              )}
-            </li>
+            <InviteItem
+              key={invite.uid}
+              invite={invite}
+              resendDisabled={resend.isPending}
+              onResend={() => void resendInvite(invite)}
+              onRevoke={() => setRevoking(invite)}
+            />
           ))}
         </ul>
       )}

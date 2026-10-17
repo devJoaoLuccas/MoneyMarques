@@ -1,0 +1,92 @@
+.root {
+  position: relative;
+}
+
+/* :where() zera a especificidade: a classe do consumidor (triggerClassName) sempre vence. */
+:where(.trigger) {
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch-target);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--icon-size-large);
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: var(--z-topbar);
+  min-width: calc(var(--space-8) * 6);
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--color-surface-secondary);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--glow-card);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-size-text-small);
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover:not(:disabled),
+.item:focus-visible {
+  background: var(--color-surface);
+}
+
+.item:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.destructive {
+  color: var(--color-negative);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

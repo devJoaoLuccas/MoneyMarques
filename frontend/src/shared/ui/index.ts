@@ -1,3 +1,4 @@
+export { ActionMenu, type ActionMenuItem } from './ActionMenu/ActionMenu'
 export { Alert } from './Alert/Alert'
 export { Button } from './Button/Button'
 export { ButtonLink } from './Button/ButtonLink'

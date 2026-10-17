@@ -190,3 +190,24 @@
   font-size: var(--font-size-section-title);
   font-weight: var(--font-weight-semibold);
 }
+
+/* Card de convite pendente: o proprio botao do menu tem o visual do card. */
+.cardTrigger {
+  padding: var(--space-4);
+  background: var(--surface-field);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.cardTrigger:hover {
+  border-color: var(--color-secondary-neon);
+}
+
+.cardTrigger .cardTitle,
+.cardTrigger .cardMeta {
+  display: flex;
+}
+
+.cardTrigger .cardMeta {
+  display: block;
+}

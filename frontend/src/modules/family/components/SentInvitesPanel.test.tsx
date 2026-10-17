@@ -287,11 +287,29 @@ describe('SentInvitesPanel (FAM-005, D-FAM-009)', () => {
     })
   })
 
-  it('revogar convite descreve o efeito, confirma e chama a API', async () => {
+  it('o card do convite pendente abre um menu com Reenviar e Revogar', async () => {
+    renderWithProviders(<SentInvitesPanel family={family} />)
+    const user = userEvent.setup()
+    const card = await screen.findByRole('button', { name: /bruno@exemplo.com/ })
+    expect(card).toHaveAttribute('aria-haspopup', 'menu')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /reenviar/i })).not.toBeInTheDocument()
+
+    await user.click(card)
+    const menu = screen.getByRole('menu', { name: 'Ações do convite para bruno@exemplo.com' })
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((i) => i.textContent),
+    ).toEqual(['Reenviar convite', 'Revogar convite'])
+  })
+
+  it('revogar descreve o efeito, confirma e chama a API', async () => {
     renderWithProviders(<SentInvitesPanel family={family} />)
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('button', { name: /revogar convite para bruno@exemplo.com/i }))
+    await user.click(await screen.findByRole('button', { name: /bruno@exemplo.com/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Revogar convite' }))
     const dialog = screen.getByRole('alertdialog')
     expect(within(dialog).getByText(/deixará de funcionar/i)).toBeInTheDocument()
     expect(familyService.revokeInvite).not.toHaveBeenCalled()
@@ -301,14 +319,24 @@ describe('SentInvitesPanel (FAM-005, D-FAM-009)', () => {
     expect(await screen.findByText(/convite para bruno@exemplo.com revogado/i)).toBeInTheDocument()
   })
 
+  it('cancelar a confirmacao nao revoga', async () => {
+    renderWithProviders(<SentInvitesPanel family={family} />)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /bruno@exemplo.com/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Revogar convite' }))
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar' }))
+    expect(familyService.revokeInvite).not.toHaveBeenCalled()
+  })
+
   it('reenviar chama a API e informa que o link anterior foi invalidado', async () => {
     renderWithProviders(<SentInvitesPanel family={family} />)
-    await userEvent
-      .setup()
-      .click(await screen.findByRole('button', { name: /reenviar convite para bruno@exemplo.com/i }))
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /bruno@exemplo.com/ }))
+    await user.click(screen.getByRole('menuitem', { name: 'Reenviar convite' }))
 
     await waitFor(() => expect(familyService.resendInvite).toHaveBeenCalledWith('f1', 'c1'))
     expect(await screen.findByText(/link anterior foi invalidado/i)).toBeInTheDocument()
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 
   it('convites ja respondidos nao oferecem reenviar nem revogar', async () => {
@@ -316,7 +344,7 @@ describe('SentInvitesPanel (FAM-005, D-FAM-009)', () => {
     renderWithProviders(<SentInvitesPanel family={family} />)
     await screen.findByText('bruno@exemplo.com')
 
-    expect(screen.queryByRole('button', { name: /reenviar/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /revogar/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /bruno@exemplo.com/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 })
