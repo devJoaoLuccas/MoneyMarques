@@ -1,5 +1,4 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 
@@ -8,8 +7,13 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  constructor(config: ConfigService) {
-    const url = new URL(config.getOrThrow<string>('DATABASE_URL'));
+  constructor() {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new Error('Variavel de ambiente DATABASE_URL ausente.');
+    }
+
+    const url = new URL(databaseUrl);
     const schema = url.searchParams.get('schema') ?? 'public';
     url.searchParams.delete('schema');
 

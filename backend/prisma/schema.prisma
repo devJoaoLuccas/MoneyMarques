@@ -201,17 +201,22 @@ enum SituacaoAlerta {
 }
 
 // ─── 01. AUTENTICACAO ──────────────────────────────────────────────────────
-// email: gravar normalizado em minusculas (unicidade case-insensitive).
+// E-mail nunca em texto puro (RF-013):
+//   emailHmac          HMAC-SHA-256 (chave EMAIL_HMAC_KEY) do e-mail normalizado
+//                      em minusculas: identificador unico de login/busca;
+//   emailCriptografado AES-256-GCM (chave EMAIL_ENCRYPTION_KEY): recuperavel,
+//                      pois o sistema precisa enviar e exibir o endereco.
 // Usuario nunca e excluido fisicamente: usar excluidoEm (soft delete).
 model Usuario {
-  uid               String    @id @default(uuid()) @db.Uuid
-  nomeCompleto      String    @map("nome_completo") @db.VarChar(120)
-  email             String    @unique @db.VarChar(254)
-  senhaHash         String    @map("senha_hash") @db.VarChar(255)
-  emailVerificadoEm DateTime? @map("email_verificado_em") @db.Timestamptz(3)
-  criadoEm          DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
-  atualizadoEm      DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
-  excluidoEm        DateTime? @map("excluido_em") @db.Timestamptz(3)
+  uid                String    @id @default(uuid()) @db.Uuid
+  nomeCompleto       String    @map("nome_completo") @db.VarChar(120)
+  emailHmac          String    @unique @map("email_hmac") @db.Char(64)
+  emailCriptografado String    @map("email_criptografado") @db.Text
+  senhaHash          String    @map("senha_hash") @db.VarChar(255)
+  emailVerificadoEm  DateTime? @map("email_verificado_em") @db.Timestamptz(3)
+  criadoEm           DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm       DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  excluidoEm         DateTime? @map("excluido_em") @db.Timestamptz(3)
 
   sessoes               SessaoUsuario[]
   tokens                TokenAutenticacao[]
@@ -350,27 +355,28 @@ model IntegranteFamilia {
   @@map("integrante_familia")
 }
 
-// emailDestino: gravar normalizado em minusculas.
+// E-mail de destino protegido como em Usuario (HMAC + copia cifrada).
 // Um unico convite PENDENTE por (familia, email): indice parcial em constraints.sql.
 model ConviteFamilia {
-  uid            String          @id @default(uuid()) @db.Uuid
-  familiaUid     String          @map("familia_uid") @db.Uuid
-  emitidoPorUid  String          @map("emitido_por_uid") @db.Uuid
-  aceitoPorUid   String?         @map("aceito_por_uid") @db.Uuid
-  emailDestino   String          @map("email_destino") @db.VarChar(254)
-  papelOferecido PapelFamilia    @default(INTEGRANTE) @map("papel_oferecido")
-  tokenHash      String          @unique @map("token_hash") @db.VarChar(255)
-  situacao       SituacaoConvite @default(PENDENTE)
-  expiraEm       DateTime        @map("expira_em") @db.Timestamptz(3)
-  criadoEm       DateTime        @default(now()) @map("criado_em") @db.Timestamptz(3)
-  respondidoEm   DateTime?       @map("respondido_em") @db.Timestamptz(3)
+  uid                       String          @id @default(uuid()) @db.Uuid
+  familiaUid                String          @map("familia_uid") @db.Uuid
+  emitidoPorUid             String          @map("emitido_por_uid") @db.Uuid
+  aceitoPorUid              String?         @map("aceito_por_uid") @db.Uuid
+  emailDestinoHmac          String          @map("email_destino_hmac") @db.Char(64)
+  emailDestinoCriptografado String          @map("email_destino_criptografado") @db.Text
+  papelOferecido            PapelFamilia    @default(INTEGRANTE) @map("papel_oferecido")
+  tokenHash                 String          @unique @map("token_hash") @db.VarChar(255)
+  situacao                  SituacaoConvite @default(PENDENTE)
+  expiraEm                  DateTime        @map("expira_em") @db.Timestamptz(3)
+  criadoEm                  DateTime        @default(now()) @map("criado_em") @db.Timestamptz(3)
+  respondidoEm              DateTime?       @map("respondido_em") @db.Timestamptz(3)
 
   familia   Familia  @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
   emissor   Usuario  @relation("EmissorConvite", fields: [emitidoPorUid], references: [uid], onDelete: Restrict)
   aceitante Usuario? @relation("AceitanteConvite", fields: [aceitoPorUid], references: [uid], onDelete: SetNull)
 
   @@index([familiaUid, situacao, expiraEm])
-  @@index([emailDestino, situacao])
+  @@index([emailDestinoHmac, situacao])
   @@map("convite_familia")
 }
 
