@@ -13,8 +13,8 @@ const issuePaths = (result: { success: boolean; error?: { issues: { path: Proper
 const validRegister = {
   nomeCompleto: 'Ana Maria',
   email: 'ana@exemplo.com',
-  senha: 'frase longa e segura 2026',
-  confirmarSenha: 'frase longa e segura 2026',
+  senha: 'Frase-Longa-Segura-2026',
+  confirmarSenha: 'Frase-Longa-Segura-2026',
   aceiteTermos: true,
 }
 
@@ -57,15 +57,22 @@ describe('registerSchema (AUTH-002, CA-008)', () => {
     ).toContain('nomeCompleto')
   })
 
-  it('exige senha de 12 a 128 caracteres, sem exigir caracteres especiais', () => {
+  it('exige senha de 12 a 128 caracteres com maiuscula, minuscula, numero e especial', () => {
     const short = registerSchema.safeParse({ ...validRegister, senha: 'curta123', confirmarSenha: 'curta123' })
     expect(issuePaths(short)).toContain('senha')
 
-    const passphrase = 'apenas letras minusculas aqui'
-    expect(registerSchema.safeParse({ ...validRegister, senha: passphrase, confirmarSenha: passphrase }).success).toBe(true)
-
-    const tooLong = 'a1'.repeat(70)
+    const tooLong = 'aB1!'.repeat(40)
     expect(registerSchema.safeParse({ ...validRegister, senha: tooLong, confirmarSenha: tooLong }).success).toBe(false)
+  })
+
+  it.each([
+    ['maiuscula', 'minha-senha-forte-2026'],
+    ['minuscula', 'MINHA-SENHA-FORTE-2026'],
+    ['numero', 'Minha-Senha-Forte-Segura'],
+    ['especial', 'MinhaSenhaForte2026'],
+  ])('rejeita senha sem %s', (_regra, senha) => {
+    const result = registerSchema.safeParse({ ...validRegister, senha, confirmarSenha: senha })
+    expect(issuePaths(result)).toEqual(['senha'])
   })
 
   it('exige confirmacao de senha igual', () => {
@@ -86,7 +93,7 @@ describe('forgotPasswordSchema (AUTH-003)', () => {
 })
 
 describe('resetPasswordSchema (AUTH-003)', () => {
-  const ok = { senha: 'nova frase longa e segura', confirmarSenha: 'nova frase longa e segura' }
+  const ok = { senha: 'Nova-Frase-Longa-Segura-1', confirmarSenha: 'Nova-Frase-Longa-Segura-1' }
 
   it('aceita nova senha valida com confirmacao', () => {
     expect(resetPasswordSchema.safeParse(ok).success).toBe(true)

@@ -8,7 +8,7 @@ import { applyFieldErrors, describeApiError } from '../../../shared/lib/form-err
 import { paths } from '../../../shared/routes/paths'
 import { Alert, Button, Checkbox, PasswordField, TextField } from '../../../shared/ui'
 import { useRegister } from '../hooks/useAuthMutations'
-import { PASSWORD_MIN_LENGTH, registerSchema, type RegisterFormValues } from '../schemas/auth.schemas'
+import { PASSWORD_HINT, registerSchema, type RegisterFormValues } from '../schemas/auth.schemas'
 import styles from './AuthForm.module.css'
 
 type RegisterOutput = z.output<typeof registerSchema>
@@ -79,7 +79,7 @@ export function RegisterForm() {
       <PasswordField
         label="Senha"
         autoComplete="new-password"
-        hint={`Mínimo de ${PASSWORD_MIN_LENGTH} caracteres. Frases-senha são bem-vindas.`}
+        hint={PASSWORD_HINT}
         error={errors.senha?.message}
         {...register('senha')}
       />

@@ -9,7 +9,7 @@ import { paths } from '../../../shared/routes/paths'
 import { Alert, Button, PasswordField } from '../../../shared/ui'
 import { useResetPassword } from '../hooks/useAuthMutations'
 import { readTokenFromHash } from '../navigation/url-token'
-import { resetPasswordSchema, type ResetPasswordFormValues } from '../schemas/auth.schemas'
+import { PASSWORD_HINT, resetPasswordSchema, type ResetPasswordFormValues } from '../schemas/auth.schemas'
 import styles from './AuthForm.module.css'
 
 type ResetOutput = z.output<typeof resetPasswordSchema>
@@ -87,6 +87,7 @@ export function ResetPasswordForm() {
       <PasswordField
         label="Nova senha"
         autoComplete="new-password"
+        hint={PASSWORD_HINT}
         error={errors.senha?.message}
         {...register('senha')}
       />

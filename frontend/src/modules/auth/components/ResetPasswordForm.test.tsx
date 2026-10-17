@@ -8,7 +8,7 @@ import { ResetPasswordForm } from './ResetPasswordForm'
 
 vi.mock('../services/auth.service', () => ({ authService: { resetPassword: vi.fn() } }))
 
-const NEW_PASSWORD = 'nova frase longa e segura'
+const NEW_PASSWORD = 'Nova-Frase-Longa-Segura-1'
 
 async function submitNewPassword() {
   const user = userEvent.setup()

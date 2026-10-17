@@ -27,14 +27,14 @@ describe('authService (contratos da API de autenticacao)', () => {
     await authService.register({
       nomeCompleto: 'Ana',
       email: 'ana@exemplo.com',
-      senha: 'frase longa e segura',
-      confirmarSenha: 'frase longa e segura',
+      senha: 'Frase-Longa-Segura-1',
+      confirmarSenha: 'Frase-Longa-Segura-1',
       aceiteTermos: true,
     })
     expect(post).toHaveBeenCalledWith('/auth/register', {
       nomeCompleto: 'Ana',
       email: 'ana@exemplo.com',
-      senha: 'frase longa e segura',
+      senha: 'Frase-Longa-Segura-1',
       aceiteTermos: true,
     })
   })
@@ -49,8 +49,8 @@ describe('authService (contratos da API de autenticacao)', () => {
   })
 
   it('resetPassword envia token e nova senha (sem a confirmacao)', async () => {
-    await authService.resetPassword('tok', 'nova frase longa e segura')
-    expect(post).toHaveBeenCalledWith('/auth/password/reset', { token: 'tok', senha: 'nova frase longa e segura' })
+    await authService.resetPassword('tok', 'Nova-Frase-Longa-Segura-1')
+    expect(post).toHaveBeenCalledWith('/auth/password/reset', { token: 'tok', senha: 'Nova-Frase-Longa-Segura-1' })
   })
 
   it('verifyEmail envia o token no corpo (nunca na URL)', async () => {

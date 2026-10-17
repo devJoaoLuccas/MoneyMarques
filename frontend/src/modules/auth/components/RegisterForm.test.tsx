@@ -8,7 +8,7 @@ import { RegisterForm } from './RegisterForm'
 
 vi.mock('../services/auth.service', () => ({ authService: { register: vi.fn() } }))
 
-const PASSWORD = 'frase longa e segura 2026'
+const PASSWORD = 'Frase-Longa-Segura-2026'
 
 async function fillValid(overrides: { senha?: string; confirmar?: string; termos?: boolean } = {}) {
   const user = userEvent.setup()

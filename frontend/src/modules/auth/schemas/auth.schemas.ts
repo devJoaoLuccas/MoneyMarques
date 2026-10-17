@@ -17,11 +17,26 @@ const email = z
   .max(EMAIL_MAX_LENGTH, `O e-mail deve ter até ${EMAIL_MAX_LENGTH} caracteres.`)
   .pipe(z.email('Informe um e-mail válido.'))
 
-/** Nova senha (cadastro/redefinicao): sem regras arbitrarias de composicao. */
+/** Texto de ajuda dos campos de nova senha. */
+export const PASSWORD_HINT = `Mínimo de ${PASSWORD_MIN_LENGTH} caracteres, com maiúscula, minúscula, número e caractere especial.`
+
+/** Regras de composicao da nova senha; espelham a politica do backend (CA-008). */
+export const PASSWORD_RULES = [
+  { id: 'maiuscula', label: 'Uma letra maiúscula', pattern: /\p{Lu}/u },
+  { id: 'minuscula', label: 'Uma letra minúscula', pattern: /\p{Ll}/u },
+  { id: 'numero', label: 'Um número', pattern: /\p{N}/u },
+  { id: 'especial', label: 'Um caractere especial (ex.: ! @ # $ -)', pattern: /[^\p{L}\p{N}\s]/u },
+] as const
+
+/** Nova senha (cadastro/redefinicao): tamanho e composicao. */
 const newPassword = z
   .string()
   .min(PASSWORD_MIN_LENGTH, `A senha deve ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`)
   .max(PASSWORD_MAX_LENGTH, `A senha deve ter no máximo ${PASSWORD_MAX_LENGTH} caracteres.`)
+  .regex(PASSWORD_RULES[0].pattern, 'A senha deve ter pelo menos uma letra maiúscula.')
+  .regex(PASSWORD_RULES[1].pattern, 'A senha deve ter pelo menos uma letra minúscula.')
+  .regex(PASSWORD_RULES[2].pattern, 'A senha deve ter pelo menos um número.')
+  .regex(PASSWORD_RULES[3].pattern, 'A senha deve ter pelo menos um caractere especial.')
 
 const fullName = z
   .string()
