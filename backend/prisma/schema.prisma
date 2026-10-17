@@ -1,0 +1,966 @@
+// Money Marques — Modelo de dados v1.1
+// PostgreSQL + Prisma ORM 7 | valores monetarios em centavos (BigInt)
+// Todas as chaves primarias se chamam `uid` e sao UUID nativos.
+// Datas civis: @db.Date | instantes: @db.Timestamptz(3), gravados em UTC.
+// Regras como saldo, ultimo administrador, ACL, pagamento e estorno exigem
+// validacao transacional no backend e, quando indicado, constraints SQL
+// (ver prisma/constraints.sql, aplicado junto da migration inicial).
+// BigInt nao serializa em JSON: converter na camada de API.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS: SEGURANCA E CONTEXTO ─────────────────────────────────────────────
+enum PapelFamilia {
+  ADMINISTRADOR
+  INTEGRANTE
+  VISUALIZADOR
+}
+
+enum SituacaoIntegrante {
+  ATIVO
+  SUSPENSO
+  REMOVIDO
+}
+
+enum SituacaoConvite {
+  PENDENTE
+  ACEITO
+  RECUSADO
+  EXPIRADO
+  REVOGADO
+}
+
+enum VisibilidadeRecurso {
+  PRIVADO
+  COMPARTILHADO
+  RESTRITO
+}
+
+// Granularidade da ACL (decisao conservadora, negar por padrao): a permissao e
+// concedida apenas sobre recursos-raiz. Lancamentos, compras e parcelas herdam
+// a permissao da conta/cartao/orcamento a que pertencem.
+// RELATORIO_CONSOLIDADO: recursoUid = uid da familia.
+enum TipoRecursoFinanceiro {
+  CONTA
+  CARTAO
+  ORCAMENTO
+  POSICAO_INVESTIMENTO
+  RELATORIO_CONSOLIDADO
+}
+
+enum TipoTokenAutenticacao {
+  VERIFICACAO_EMAIL
+  REDEFINICAO_SENHA
+}
+
+enum ResultadoAuditoria {
+  SUCESSO
+  FALHA
+  NEGADO
+}
+
+// ─── ENUMS: FINANCAS ────────────────────────────────────────────────────────
+enum TipoContaFinanceira {
+  CORRENTE
+  POUPANCA
+  CARTEIRA
+  DINHEIRO
+  OUTRA
+}
+
+enum SituacaoConta {
+  ATIVA
+  ARQUIVADA
+}
+
+enum TipoCategoria {
+  RECEITA
+  DESPESA
+}
+
+enum TipoLancamento {
+  RECEITA
+  DESPESA
+}
+
+enum SituacaoLancamento {
+  PREVISTO
+  PENDENTE
+  PARCIALMENTE_LIQUIDADO
+  LIQUIDADO
+  CANCELADO
+}
+
+enum SituacaoLiquidacao {
+  CONFIRMADA
+  ESTORNADA
+}
+
+enum TipoMovimentacaoConta {
+  RECEBIMENTO
+  PAGAMENTO
+  TRANSFERENCIA_ENTRADA
+  TRANSFERENCIA_SAIDA
+  PAGAMENTO_FATURA
+  APORTE_INVESTIMENTO
+  RESGATE_INVESTIMENTO
+  AJUSTE
+  ESTORNO
+}
+
+enum PeriodicidadeRecorrencia {
+  DIARIA
+  SEMANAL
+  QUINZENAL
+  MENSAL
+  ANUAL
+}
+
+enum SituacaoTransferencia {
+  EFETIVADA
+  ESTORNADA
+}
+
+enum SituacaoCartao {
+  ATIVO
+  BLOQUEADO
+  ARQUIVADO
+}
+
+enum SituacaoCompraCartao {
+  ATIVA
+  CANCELADA
+  ESTORNADA
+}
+
+enum SituacaoFatura {
+  ABERTA
+  FECHADA
+  PARCIALMENTE_PAGA
+  PAGA
+  CANCELADA
+}
+
+enum SituacaoPagamentoFatura {
+  CONFIRMADO
+  ESTORNADO
+}
+
+enum TipoAjusteFatura {
+  CREDITO
+  DEBITO
+  ESTORNO
+}
+
+// A qual orcamento a despesa pertence (evita contagem em dobro entre a visao
+// pessoal e a familiar). FAMILIAR exige familiaUid preenchido.
+enum EscopoOrcamento {
+  PESSOAL
+  FAMILIAR
+}
+
+enum SituacaoOrcamento {
+  ATIVO
+  ARQUIVADO
+}
+
+enum SituacaoPosicaoInvestimento {
+  ATIVA
+  ENCERRADA
+}
+
+enum TipoMovimentoInvestimento {
+  APORTE
+  RESGATE
+  AJUSTE
+}
+
+enum SituacaoMovimentoInvestimento {
+  CONFIRMADO
+  ESTORNADO
+}
+
+enum GravidadeAlerta {
+  INFORMATIVO
+  ATENCAO
+  CRITICO
+}
+
+enum SituacaoAlerta {
+  ATIVO
+  LIDO
+  RESOLVIDO
+  DISPENSADO
+}
+
+// ─── 01. AUTENTICACAO ──────────────────────────────────────────────────────
+// email: gravar normalizado em minusculas (unicidade case-insensitive).
+// Usuario nunca e excluido fisicamente: usar excluidoEm (soft delete).
+model Usuario {
+  uid               String    @id @default(uuid()) @db.Uuid
+  nomeCompleto      String    @map("nome_completo") @db.VarChar(120)
+  email             String    @unique @db.VarChar(254)
+  senhaHash         String    @map("senha_hash") @db.VarChar(255)
+  emailVerificadoEm DateTime? @map("email_verificado_em") @db.Timestamptz(3)
+  criadoEm          DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm      DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  excluidoEm        DateTime? @map("excluido_em") @db.Timestamptz(3)
+
+  sessoes               SessaoUsuario[]
+  tokens                TokenAutenticacao[]
+  configuracaoMfa       ConfiguracaoMfa?
+  codigosRecuperacaoMfa CodigoRecuperacaoMfa[]
+  familiasCriadas       Familia[]                 @relation("CriadorFamilia")
+  participacoes         IntegranteFamilia[]
+  convitesEmitidos      ConviteFamilia[]          @relation("EmissorConvite")
+  convitesAceitos       ConviteFamilia[]          @relation("AceitanteConvite")
+  permissoesRecebidas   PermissaoRecursoFamilia[] @relation("DestinatarioPermissao")
+  permissoesConcedidas  PermissaoRecursoFamilia[] @relation("ConcedentePermissao")
+  contas                ContaFinanceira[]
+  categorias            CategoriaFinanceira[]
+  lancamentos           LancamentoFinanceiro[]    @relation("TitularLancamento")
+  lancamentosCriados    LancamentoFinanceiro[]    @relation("CriadorLancamento")
+  movimentacoesCriadas  MovimentacaoConta[]       @relation("CriadorMovimentacao")
+  recorrencias          RecorrenciaFinanceira[]   @relation("TitularRecorrencia")
+  recorrenciasCriadas   RecorrenciaFinanceira[]   @relation("CriadorRecorrencia")
+  cartoes               CartaoCredito[]
+  comprasCriadas        CompraCartao[]
+  orcamentos            OrcamentoCategoria[]
+  posicoes              PosicaoInvestimento[]
+  preferencias          PreferenciaUsuario?
+  preferenciasAlertas   PreferenciaAlerta[]
+  alertas               AlertaFinanceiro[]
+  eventosAuditoria      EventoAuditoria[]
+
+  @@map("usuario")
+}
+
+model SessaoUsuario {
+  uid               String    @id @default(uuid()) @db.Uuid
+  usuarioUid        String    @map("usuario_uid") @db.Uuid
+  tokenHash         String    @unique @map("token_hash") @db.VarChar(255)
+  mfaVerificado     Boolean   @default(false) @map("mfa_verificado")
+  manterSessao      Boolean   @default(false) @map("manter_sessao")
+  ipCriacao         String?   @map("ip_criacao") @db.VarChar(45)
+  userAgent         String?   @map("user_agent") @db.VarChar(1024)
+  criadaEm          DateTime  @default(now()) @map("criada_em") @db.Timestamptz(3)
+  ultimaAtividadeEm DateTime? @map("ultima_atividade_em") @db.Timestamptz(3)
+  expiraEm          DateTime  @map("expira_em") @db.Timestamptz(3)
+  revogadaEm        DateTime? @map("revogada_em") @db.Timestamptz(3)
+
+  usuario    Usuario           @relation(fields: [usuarioUid], references: [uid], onDelete: Cascade)
+  auditorias EventoAuditoria[]
+
+  @@index([usuarioUid, expiraEm])
+  @@map("sessao_usuario")
+}
+
+model TokenAutenticacao {
+  uid         String                @id @default(uuid()) @db.Uuid
+  usuarioUid  String                @map("usuario_uid") @db.Uuid
+  tipo        TipoTokenAutenticacao
+  tokenHash   String                @unique @map("token_hash") @db.VarChar(255)
+  expiraEm    DateTime              @map("expira_em") @db.Timestamptz(3)
+  utilizadoEm DateTime?             @map("utilizado_em") @db.Timestamptz(3)
+  criadoEm    DateTime              @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioUid], references: [uid], onDelete: Cascade)
+
+  @@index([usuarioUid, tipo, expiraEm])
+  @@map("token_autenticacao")
+}
+
+model ConfiguracaoMfa {
+  uid                  String    @id @default(uuid()) @db.Uuid
+  usuarioUid           String    @unique @map("usuario_uid") @db.Uuid
+  segredoCriptografado String    @map("segredo_criptografado") @db.Text
+  habilitado           Boolean   @default(false)
+  ultimoPassoTotp      BigInt?   @map("ultimo_passo_totp")
+  habilitadoEm         DateTime? @map("habilitado_em") @db.Timestamptz(3)
+  atualizadoEm         DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioUid], references: [uid], onDelete: Cascade)
+
+  @@map("configuracao_mfa")
+}
+
+model CodigoRecuperacaoMfa {
+  uid         String    @id @default(uuid()) @db.Uuid
+  usuarioUid  String    @map("usuario_uid") @db.Uuid
+  codigoHash  String    @unique @map("codigo_hash") @db.VarChar(255)
+  utilizadoEm DateTime? @map("utilizado_em") @db.Timestamptz(3)
+  criadoEm    DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioUid], references: [uid], onDelete: Cascade)
+
+  @@index([usuarioUid, utilizadoEm])
+  @@map("codigo_recuperacao_mfa")
+}
+
+// ─── 02. GESTAO FAMILIAR E ACL ─────────────────────────────────────────────
+model Familia {
+  uid           String    @id @default(uuid()) @db.Uuid
+  criadorUid    String    @map("criador_uid") @db.Uuid
+  nome          String    @db.VarChar(40)
+  descricao     String?   @db.VarChar(240)
+  avatarUrl     String?   @map("avatar_url") @db.Text
+  configuracoes Json?
+  criadaEm      DateTime  @default(now()) @map("criada_em") @db.Timestamptz(3)
+  atualizadaEm  DateTime  @updatedAt @map("atualizada_em") @db.Timestamptz(3)
+  encerradaEm   DateTime? @map("encerrada_em") @db.Timestamptz(3)
+
+  criador      Usuario                   @relation("CriadorFamilia", fields: [criadorUid], references: [uid], onDelete: Restrict)
+  integrantes  IntegranteFamilia[]
+  convites     ConviteFamilia[]
+  permissoes   PermissaoRecursoFamilia[]
+  contas       ContaFinanceira[]
+  categorias   CategoriaFinanceira[]
+  lancamentos  LancamentoFinanceiro[]
+  recorrencias RecorrenciaFinanceira[]
+  cartoes      CartaoCredito[]
+  orcamentos   OrcamentoCategoria[]
+  posicoes     PosicaoInvestimento[]
+  alertas      AlertaFinanceiro[]
+  auditorias   EventoAuditoria[]
+
+  @@map("familia")
+}
+
+model IntegranteFamilia {
+  uid         String             @id @default(uuid()) @db.Uuid
+  familiaUid  String             @map("familia_uid") @db.Uuid
+  usuarioUid  String             @map("usuario_uid") @db.Uuid
+  papel       PapelFamilia       @default(INTEGRANTE)
+  situacao    SituacaoIntegrante @default(ATIVO)
+  ingressouEm DateTime           @default(now()) @map("ingressou_em") @db.Timestamptz(3)
+  removidoEm  DateTime?          @map("removido_em") @db.Timestamptz(3)
+
+  familia Familia @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  usuario Usuario @relation(fields: [usuarioUid], references: [uid], onDelete: Restrict)
+
+  @@unique([familiaUid, usuarioUid])
+  @@index([familiaUid, papel, situacao])
+  @@map("integrante_familia")
+}
+
+// emailDestino: gravar normalizado em minusculas.
+// Um unico convite PENDENTE por (familia, email): indice parcial em constraints.sql.
+model ConviteFamilia {
+  uid            String          @id @default(uuid()) @db.Uuid
+  familiaUid     String          @map("familia_uid") @db.Uuid
+  emitidoPorUid  String          @map("emitido_por_uid") @db.Uuid
+  aceitoPorUid   String?         @map("aceito_por_uid") @db.Uuid
+  emailDestino   String          @map("email_destino") @db.VarChar(254)
+  papelOferecido PapelFamilia    @default(INTEGRANTE) @map("papel_oferecido")
+  tokenHash      String          @unique @map("token_hash") @db.VarChar(255)
+  situacao       SituacaoConvite @default(PENDENTE)
+  expiraEm       DateTime        @map("expira_em") @db.Timestamptz(3)
+  criadoEm       DateTime        @default(now()) @map("criado_em") @db.Timestamptz(3)
+  respondidoEm   DateTime?       @map("respondido_em") @db.Timestamptz(3)
+
+  familia   Familia  @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  emissor   Usuario  @relation("EmissorConvite", fields: [emitidoPorUid], references: [uid], onDelete: Restrict)
+  aceitante Usuario? @relation("AceitanteConvite", fields: [aceitoPorUid], references: [uid], onDelete: SetNull)
+
+  @@index([familiaUid, situacao, expiraEm])
+  @@index([emailDestino, situacao])
+  @@map("convite_familia")
+}
+
+// ACL polimorfica: recursoUid corresponde a uma das tabelas financeiras,
+// conforme tipoRecurso; PostgreSQL nao cria FK polimorfica automaticamente
+// (integridade validada na camada de servico).
+// Negar por padrao: sem linha ativa (revogadaEm nulo) nao ha acesso.
+// podeCriar = criar itens filhos (lancamentos na conta, compras no cartao).
+model PermissaoRecursoFamilia {
+  uid             String                @id @default(uuid()) @db.Uuid
+  familiaUid      String                @map("familia_uid") @db.Uuid
+  usuarioUid      String                @map("usuario_uid") @db.Uuid
+  concedidoPorUid String                @map("concedido_por_uid") @db.Uuid
+  tipoRecurso     TipoRecursoFinanceiro @map("tipo_recurso")
+  recursoUid      String                @map("recurso_uid") @db.Uuid
+  podeVisualizar  Boolean               @default(true) @map("pode_visualizar")
+  podeCriar       Boolean               @default(false) @map("pode_criar")
+  podeEditar      Boolean               @default(false) @map("pode_editar")
+  podeExcluir     Boolean               @default(false) @map("pode_excluir")
+  concedidaEm     DateTime              @default(now()) @map("concedida_em") @db.Timestamptz(3)
+  revogadaEm      DateTime?             @map("revogada_em") @db.Timestamptz(3)
+
+  familia      Familia @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  destinatario Usuario @relation("DestinatarioPermissao", fields: [usuarioUid], references: [uid], onDelete: Restrict)
+  concedente   Usuario @relation("ConcedentePermissao", fields: [concedidoPorUid], references: [uid], onDelete: Restrict)
+
+  @@unique([familiaUid, usuarioUid, tipoRecurso, recursoUid])
+  @@index([familiaUid, tipoRecurso, recursoUid])
+  @@map("permissao_recurso_familia")
+}
+
+// ─── 04. CONTAS E TRANSACOES ────────────────────────────────────────────────
+// Catalogo global (seed administrado pela plataforma). Cadastro de instituicao
+// pelo usuario fica fora do MVP.
+model InstituicaoFinanceira {
+  uid      String   @id @default(uuid()) @db.Uuid
+  nome     String   @db.VarChar(120)
+  ativa    Boolean  @default(true)
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  contas   ContaFinanceira[]
+  posicoes PosicaoInvestimento[]
+
+  @@map("instituicao_financeira")
+}
+
+// Saldo nao e coluna: = saldoInicialCentavos + soma das movimentacoes com
+// dataEfetivacao a partir de dataSaldoInicial (data civil no fuso do usuario).
+// visibilidade <> PRIVADO exige familiaUid (CHECK).
+model ContaFinanceira {
+  uid                  String              @id @default(uuid()) @db.Uuid
+  titularUid           String              @map("titular_uid") @db.Uuid
+  familiaUid           String?             @map("familia_uid") @db.Uuid
+  instituicaoUid       String?             @map("instituicao_uid") @db.Uuid
+  nome                 String              @db.VarChar(100)
+  tipo                 TipoContaFinanceira
+  moeda                String              @default("BRL") @db.Char(3)
+  saldoInicialCentavos BigInt              @default(0) @map("saldo_inicial_centavos")
+  dataSaldoInicial     DateTime            @map("data_saldo_inicial") @db.Date
+  visibilidade         VisibilidadeRecurso @default(PRIVADO)
+  situacao             SituacaoConta       @default(ATIVA)
+  criadaEm             DateTime            @default(now()) @map("criada_em") @db.Timestamptz(3)
+  atualizadaEm         DateTime            @updatedAt @map("atualizada_em") @db.Timestamptz(3)
+
+  titular               Usuario                   @relation(fields: [titularUid], references: [uid], onDelete: Restrict)
+  familia               Familia?                  @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  instituicao           InstituicaoFinanceira?    @relation(fields: [instituicaoUid], references: [uid], onDelete: SetNull)
+  movimentacoes         MovimentacaoConta[]
+  contasOrigemTransf    TransferenciaFinanceira[] @relation("ContaOrigemTransferencia")
+  contasDestinoTransf   TransferenciaFinanceira[] @relation("ContaDestinoTransferencia")
+  lancamentosPreferidos LancamentoFinanceiro[]
+  recorrencias          RecorrenciaFinanceira[]
+
+  @@index([titularUid, situacao])
+  @@index([familiaUid, visibilidade])
+  @@map("conta_financeira")
+}
+
+model CategoriaFinanceira {
+  uid          String              @id @default(uuid()) @db.Uuid
+  titularUid   String              @map("titular_uid") @db.Uuid
+  familiaUid   String?             @map("familia_uid") @db.Uuid
+  tipo         TipoCategoria
+  nome         String              @db.VarChar(80)
+  icone        String?             @db.VarChar(60)
+  cor          String?             @db.VarChar(9)
+  essencial    Boolean             @default(false)
+  visibilidade VisibilidadeRecurso @default(PRIVADO)
+  ativa        Boolean             @default(true)
+  criadaEm     DateTime            @default(now()) @map("criada_em") @db.Timestamptz(3)
+
+  titular      Usuario                 @relation(fields: [titularUid], references: [uid], onDelete: Restrict)
+  familia      Familia?                @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  lancamentos  LancamentoFinanceiro[]
+  recorrencias RecorrenciaFinanceira[]
+  compras      CompraCartao[]
+  orcamentos   OrcamentoCategoria[]
+
+  @@index([titularUid, tipo, ativa])
+  @@index([familiaUid, tipo, ativa])
+  @@map("categoria_financeira")
+}
+
+// Obrigacao/consumo (competencia) separado do livro-caixa (movimentos).
+// titularUid = quem arca/realizou a despesa; criadoPorUid = quem registrou.
+// escopoOrcamento define em qual orcamento o lancamento conta:
+//   FAMILIAR => familiaUid obrigatorio (CHECK); conta so no orcamento familiar
+//   e aparece na visao pessoal do titular apenas como consulta (sem somar).
+// valorCentavos > 0 (CHECK). Nunca criar lancamento para compra de cartao.
+model LancamentoFinanceiro {
+  uid                  String              @id @default(uuid()) @db.Uuid
+  titularUid           String              @map("titular_uid") @db.Uuid
+  criadoPorUid         String              @map("criado_por_uid") @db.Uuid
+  familiaUid           String?             @map("familia_uid") @db.Uuid
+  categoriaUid         String?             @map("categoria_uid") @db.Uuid
+  contaPreferencialUid String?             @map("conta_preferencial_uid") @db.Uuid
+  recorrenciaUid       String?             @map("recorrencia_uid") @db.Uuid
+  tipo                 TipoLancamento
+  descricao            String              @db.VarChar(255)
+  valorCentavos        BigInt              @map("valor_centavos")
+  competencia          DateTime            @db.Date
+  vencimento           DateTime?           @db.Date
+  ocorrenciaPrevistaEm DateTime?           @map("ocorrencia_prevista_em") @db.Date
+  reconhecidoEm        DateTime?           @map("reconhecido_em") @db.Timestamptz(3)
+  situacao             SituacaoLancamento  @default(PREVISTO)
+  visibilidade         VisibilidadeRecurso @default(PRIVADO)
+  escopoOrcamento      EscopoOrcamento     @default(PESSOAL) @map("escopo_orcamento")
+  criadoEm             DateTime            @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm         DateTime            @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+
+  titular           Usuario                @relation("TitularLancamento", fields: [titularUid], references: [uid], onDelete: Restrict)
+  criador           Usuario                @relation("CriadorLancamento", fields: [criadoPorUid], references: [uid], onDelete: Restrict)
+  familia           Familia?               @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  categoria         CategoriaFinanceira?   @relation(fields: [categoriaUid], references: [uid], onDelete: Restrict)
+  contaPreferencial ContaFinanceira?       @relation(fields: [contaPreferencialUid], references: [uid], onDelete: Restrict)
+  recorrencia       RecorrenciaFinanceira? @relation(fields: [recorrenciaUid], references: [uid], onDelete: Restrict)
+  liquidacoes       LiquidacaoLancamento[]
+
+  @@unique([recorrenciaUid, ocorrenciaPrevistaEm])
+  @@index([titularUid, competencia, tipo, situacao])
+  @@index([familiaUid, competencia, visibilidade])
+  @@index([vencimento, situacao])
+  @@map("lancamento_financeiro")
+}
+
+// Livro-caixa: lancamentos de saldo efetivamente realizados, nunca previstos.
+// valorCentavos e ASSINADO (+ entrada / - saida) e diferente de zero (CHECK).
+// Estornos sao novas linhas (tipo ESTORNO) com estornoDeUid apontando para a
+// movimentacao original; uma movimentacao so pode ser estornada uma vez
+// (estornoDeUid @unique). AJUSTE e ESTORNO exigem descricao (motivo) no servico.
+model MovimentacaoConta {
+  uid               String                @id @default(uuid()) @db.Uuid
+  contaUid          String                @map("conta_uid") @db.Uuid
+  criadoPorUid      String                @map("criado_por_uid") @db.Uuid
+  transferenciaUid  String?               @map("transferencia_uid") @db.Uuid
+  estornoDeUid      String?               @unique @map("estorno_de_uid") @db.Uuid
+  tipo              TipoMovimentacaoConta
+  valorCentavos     BigInt                @map("valor_centavos")
+  dataEfetivacao    DateTime              @map("data_efetivacao") @db.Timestamptz(3)
+  descricao         String?               @db.VarChar(255)
+  chaveIdempotencia String                @unique @map("chave_idempotencia") @db.VarChar(120)
+  criadoEm          DateTime              @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  conta                 ContaFinanceira          @relation(fields: [contaUid], references: [uid], onDelete: Restrict)
+  criador               Usuario                  @relation("CriadorMovimentacao", fields: [criadoPorUid], references: [uid], onDelete: Restrict)
+  transferencia         TransferenciaFinanceira? @relation(fields: [transferenciaUid], references: [uid], onDelete: Restrict)
+  estornoDe             MovimentacaoConta?       @relation("EstornoMovimentacao", fields: [estornoDeUid], references: [uid], onDelete: Restrict)
+  estorno               MovimentacaoConta?       @relation("EstornoMovimentacao")
+  liquidacaoLancamento  LiquidacaoLancamento?
+  pagamentoFatura       PagamentoFatura?
+  movimentoInvestimento MovimentoInvestimento?
+
+  @@index([contaUid, dataEfetivacao])
+  @@index([transferenciaUid])
+  @@map("movimentacao_conta")
+}
+
+// valorCentavos > 0 e igual a |movimentacao.valorCentavos| (CHECK/servico);
+// o sinal da movimentacao deve casar com o tipo do lancamento
+// (RECEITA => entrada, DESPESA => saida).
+// Estorno: situacao = ESTORNADA + movimentacao ESTORNO; a situacao do
+// lancamento e recalculada somando apenas liquidacoes CONFIRMADAS.
+model LiquidacaoLancamento {
+  uid             String             @id @default(uuid()) @db.Uuid
+  lancamentoUid   String             @map("lancamento_uid") @db.Uuid
+  movimentacaoUid String             @unique @map("movimentacao_uid") @db.Uuid
+  valorCentavos   BigInt             @map("valor_centavos")
+  liquidadoEm     DateTime           @map("liquidado_em") @db.Timestamptz(3)
+  situacao        SituacaoLiquidacao @default(CONFIRMADA)
+
+  lancamento   LancamentoFinanceiro @relation(fields: [lancamentoUid], references: [uid], onDelete: Restrict)
+  movimentacao MovimentacaoConta    @relation(fields: [movimentacaoUid], references: [uid], onDelete: Restrict)
+
+  @@index([lancamentoUid, liquidadoEm])
+  @@map("liquidacao_lancamento")
+}
+
+// Duas pontas: exatamente duas movimentacoes (saida na origem, entrada no
+// destino) de mesmo modulo e soma zero. contaOrigem <> contaDestino (CHECK).
+// Estorno: movimentacoes ESTORNO ligadas a cada ponta via estornoDeUid.
+model TransferenciaFinanceira {
+  uid               String                @id @default(uuid()) @db.Uuid
+  contaOrigemUid    String                @map("conta_origem_uid") @db.Uuid
+  contaDestinoUid   String                @map("conta_destino_uid") @db.Uuid
+  valorCentavos     BigInt                @map("valor_centavos")
+  efetivadaEm       DateTime              @map("efetivada_em") @db.Timestamptz(3)
+  situacao          SituacaoTransferencia @default(EFETIVADA)
+  chaveIdempotencia String                @unique @map("chave_idempotencia") @db.VarChar(120)
+  criadaEm          DateTime              @default(now()) @map("criada_em") @db.Timestamptz(3)
+
+  contaOrigem   ContaFinanceira     @relation("ContaOrigemTransferencia", fields: [contaOrigemUid], references: [uid], onDelete: Restrict)
+  contaDestino  ContaFinanceira     @relation("ContaDestinoTransferencia", fields: [contaDestinoUid], references: [uid], onDelete: Restrict)
+  movimentacoes MovimentacaoConta[]
+
+  @@index([contaOrigemUid, efetivadaEm])
+  @@index([contaDestinoUid, efetivadaEm])
+  @@map("transferencia_financeira")
+}
+
+// Gera LancamentoFinanceiro PREVISTO. Recorrencia em cartao de credito
+// (ex.: assinaturas) esta FORA do MVP (decisao conservadora e reversivel).
+// Para dias inexistentes no mes (29-31), usar o ultimo dia do mes.
+// visibilidade e escopoOrcamento sao herdados pelos lancamentos gerados.
+model RecorrenciaFinanceira {
+  uid                  String                   @id @default(uuid()) @db.Uuid
+  titularUid           String                   @map("titular_uid") @db.Uuid
+  criadoPorUid         String                   @map("criado_por_uid") @db.Uuid
+  familiaUid           String?                  @map("familia_uid") @db.Uuid
+  categoriaUid         String?                  @map("categoria_uid") @db.Uuid
+  contaPreferencialUid String?                  @map("conta_preferencial_uid") @db.Uuid
+  tipo                 TipoLancamento
+  descricao            String                   @db.VarChar(255)
+  valorCentavos        BigInt                   @map("valor_centavos")
+  periodicidade        PeriodicidadeRecorrencia
+  inicio               DateTime                 @db.Date
+  fim                  DateTime?                @db.Date
+  proximaOcorrencia    DateTime?                @map("proxima_ocorrencia") @db.Date
+  visibilidade         VisibilidadeRecurso      @default(PRIVADO)
+  escopoOrcamento      EscopoOrcamento          @default(PESSOAL) @map("escopo_orcamento")
+  ativa                Boolean                  @default(true)
+  criadaEm             DateTime                 @default(now()) @map("criada_em") @db.Timestamptz(3)
+  atualizadaEm         DateTime                 @updatedAt @map("atualizada_em") @db.Timestamptz(3)
+
+  titular           Usuario                @relation("TitularRecorrencia", fields: [titularUid], references: [uid], onDelete: Restrict)
+  criador           Usuario                @relation("CriadorRecorrencia", fields: [criadoPorUid], references: [uid], onDelete: Restrict)
+  familia           Familia?               @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  categoria         CategoriaFinanceira?   @relation(fields: [categoriaUid], references: [uid], onDelete: Restrict)
+  contaPreferencial ContaFinanceira?       @relation(fields: [contaPreferencialUid], references: [uid], onDelete: Restrict)
+  lancamentos       LancamentoFinanceiro[]
+
+  @@index([ativa, proximaOcorrencia])
+  @@index([titularUid, ativa])
+  @@map("recorrencia_financeira")
+}
+
+// ─── 05. CARTOES, PARCELAS E FATURAS ────────────────────────────────────────
+// diaFechamento/diaVencimento: 1..31 (CHECK). Em meses sem o dia, usa-se o
+// ultimo dia do mes. Limite utilizado = soma das parcelas de compras ATIVAS em
+// faturas nao PAGAS (calculado). Decisao conservadora: com fatura parcialmente
+// paga o limite so e liberado quando a fatura fica PAGA.
+// identificadorMascarado: somente ultimos digitos; nunca o numero completo.
+model CartaoCredito {
+  uid                    String              @id @default(uuid()) @db.Uuid
+  titularUid             String              @map("titular_uid") @db.Uuid
+  familiaUid             String?             @map("familia_uid") @db.Uuid
+  nome                   String              @db.VarChar(100)
+  emissor                String?             @db.VarChar(100)
+  bandeira               String?             @db.VarChar(40)
+  identificadorMascarado String?             @map("identificador_mascarado") @db.VarChar(16)
+  limiteCentavos         BigInt              @map("limite_centavos")
+  diaFechamento          Int                 @map("dia_fechamento") @db.SmallInt
+  diaVencimento          Int                 @map("dia_vencimento") @db.SmallInt
+  situacao               SituacaoCartao      @default(ATIVO)
+  visibilidade           VisibilidadeRecurso @default(PRIVADO)
+  criadoEm               DateTime            @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm           DateTime            @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+
+  titular Usuario        @relation(fields: [titularUid], references: [uid], onDelete: Restrict)
+  familia Familia?       @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  compras CompraCartao[]
+  faturas FaturaCartao[]
+
+  @@index([titularUid, situacao])
+  @@index([familiaUid, visibilidade])
+  @@map("cartao_credito")
+}
+
+// Fonte da verdade do cancelamento: CompraCartao.situacao (CANCELADA/ESTORNADA).
+// AjusteFatura tipo ESTORNO e usado apenas quando a fatura ja esta FECHADA/paga
+// e o valor deve ser abatido em fatura posterior; nao combinar os dois para a
+// mesma parcela (evita abater duas vezes).
+// Soma das parcelas = valorTotalCentavos (servico/CHECK deferido); quantidadeParcelas >= 1.
+// escopoOrcamento: FAMILIAR exige que o cartao tenha familiaUid.
+model CompraCartao {
+  uid                String               @id @default(uuid()) @db.Uuid
+  cartaoUid          String               @map("cartao_uid") @db.Uuid
+  categoriaUid       String?              @map("categoria_uid") @db.Uuid
+  criadoPorUid       String               @map("criado_por_uid") @db.Uuid
+  descricao          String               @db.VarChar(255)
+  valorTotalCentavos BigInt               @map("valor_total_centavos")
+  dataCompra         DateTime             @map("data_compra") @db.Date
+  quantidadeParcelas Int                  @default(1) @map("quantidade_parcelas") @db.SmallInt
+  escopoOrcamento    EscopoOrcamento      @default(PESSOAL) @map("escopo_orcamento")
+  situacao           SituacaoCompraCartao @default(ATIVA)
+  criadaEm           DateTime             @default(now()) @map("criada_em") @db.Timestamptz(3)
+  atualizadaEm       DateTime             @updatedAt @map("atualizada_em") @db.Timestamptz(3)
+
+  cartao    CartaoCredito        @relation(fields: [cartaoUid], references: [uid], onDelete: Restrict)
+  categoria CategoriaFinanceira? @relation(fields: [categoriaUid], references: [uid], onDelete: Restrict)
+  criador   Usuario              @relation(fields: [criadoPorUid], references: [uid], onDelete: Restrict)
+  parcelas  ParcelaCompra[]
+  ajustes   AjusteFatura[]
+
+  @@index([cartaoUid, dataCompra])
+  @@map("compra_cartao")
+}
+
+// Valor da fatura nao e coluna: soma das parcelas de compras ATIVAS + ajustes.
+// SituacaoFatura PARCIALMENTE_PAGA/PAGA e derivada dos pagamentos CONFIRMADOS.
+// dataFechamento/dataVencimento sao snapshot (preservam historico se o cartao mudar).
+model FaturaCartao {
+  uid            String         @id @default(uuid()) @db.Uuid
+  cartaoUid      String         @map("cartao_uid") @db.Uuid
+  competencia    DateTime       @db.Date
+  dataFechamento DateTime       @map("data_fechamento") @db.Date
+  dataVencimento DateTime       @map("data_vencimento") @db.Date
+  situacao       SituacaoFatura @default(ABERTA)
+  criadaEm       DateTime       @default(now()) @map("criada_em") @db.Timestamptz(3)
+  atualizadaEm   DateTime       @updatedAt @map("atualizada_em") @db.Timestamptz(3)
+
+  cartao     CartaoCredito     @relation(fields: [cartaoUid], references: [uid], onDelete: Restrict)
+  parcelas   ParcelaCompra[]
+  pagamentos PagamentoFatura[]
+  ajustes    AjusteFatura[]
+
+  @@unique([cartaoUid, competencia])
+  @@index([dataVencimento, situacao])
+  @@map("fatura_cartao")
+}
+
+// A competencia da parcela e a da fatura (fatura.competencia), sem duplicar.
+model ParcelaCompra {
+  uid           String @id @default(uuid()) @db.Uuid
+  compraUid     String @map("compra_uid") @db.Uuid
+  faturaUid     String @map("fatura_uid") @db.Uuid
+  numero        Int    @db.SmallInt
+  valorCentavos BigInt @map("valor_centavos")
+
+  compra CompraCartao @relation(fields: [compraUid], references: [uid], onDelete: Restrict)
+  fatura FaturaCartao @relation(fields: [faturaUid], references: [uid], onDelete: Restrict)
+
+  @@unique([compraUid, numero])
+  @@index([faturaUid])
+  @@map("parcela_compra")
+}
+
+// valorCentavos > 0 e igual a |movimentacao.valorCentavos| (movimentacao do
+// tipo PAGAMENTO_FATURA, saida). Estorno: situacao = ESTORNADO + movimentacao
+// ESTORNO; a situacao da fatura e recalculada.
+model PagamentoFatura {
+  uid               String                  @id @default(uuid()) @db.Uuid
+  faturaUid         String                  @map("fatura_uid") @db.Uuid
+  movimentacaoUid   String                  @unique @map("movimentacao_uid") @db.Uuid
+  valorCentavos     BigInt                  @map("valor_centavos")
+  pagoEm            DateTime                @map("pago_em") @db.Timestamptz(3)
+  situacao          SituacaoPagamentoFatura @default(CONFIRMADO)
+  chaveIdempotencia String                  @unique @map("chave_idempotencia") @db.VarChar(120)
+
+  fatura       FaturaCartao      @relation(fields: [faturaUid], references: [uid], onDelete: Restrict)
+  movimentacao MovimentacaoConta @relation(fields: [movimentacaoUid], references: [uid], onDelete: Restrict)
+
+  @@index([faturaUid, pagoEm])
+  @@map("pagamento_fatura")
+}
+
+model AjusteFatura {
+  uid             String           @id @default(uuid()) @db.Uuid
+  faturaUid       String           @map("fatura_uid") @db.Uuid
+  compraOrigemUid String?          @map("compra_origem_uid") @db.Uuid
+  tipo            TipoAjusteFatura
+  valorCentavos   BigInt           @map("valor_centavos")
+  motivo          String           @db.VarChar(255)
+  dataEfetiva     DateTime         @map("data_efetiva") @db.Date
+  criadoEm        DateTime         @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  fatura       FaturaCartao  @relation(fields: [faturaUid], references: [uid], onDelete: Restrict)
+  compraOrigem CompraCartao? @relation(fields: [compraOrigemUid], references: [uid], onDelete: Restrict)
+
+  @@index([faturaUid, dataEfetiva])
+  @@map("ajuste_fatura")
+}
+
+// ─── 06. PLANEJAMENTO ───────────────────────────────────────────────────────
+// escopoUid evita a unique com NULLs do PostgreSQL. CHECK:
+//   PESSOAL  => escopoUid = titularUid e familiaUid nulo
+//   FAMILIAR => escopoUid = familiaUid (familiaUid obrigatorio)
+model OrcamentoCategoria {
+  uid            String            @id @default(uuid()) @db.Uuid
+  titularUid     String            @map("titular_uid") @db.Uuid
+  familiaUid     String?           @map("familia_uid") @db.Uuid
+  categoriaUid   String            @map("categoria_uid") @db.Uuid
+  escopo         EscopoOrcamento
+  escopoUid      String            @map("escopo_uid") @db.Uuid
+  competencia    DateTime          @db.Date
+  limiteCentavos BigInt            @map("limite_centavos")
+  situacao       SituacaoOrcamento @default(ATIVO)
+  criadoEm       DateTime          @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm   DateTime          @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+
+  titular   Usuario             @relation(fields: [titularUid], references: [uid], onDelete: Restrict)
+  familia   Familia?            @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  categoria CategoriaFinanceira @relation(fields: [categoriaUid], references: [uid], onDelete: Restrict)
+
+  @@unique([escopo, escopoUid, categoriaUid, competencia])
+  @@index([titularUid, competencia])
+  @@index([familiaUid, competencia])
+  @@map("orcamento_categoria")
+}
+
+// Projecoes e dashboards sao calculos/consultas, nao tabelas de saldo.
+
+// ─── 07. INVESTIMENTOS ──────────────────────────────────────────────────────
+// Catalogo global (seed), como InstituicaoFinanceira.
+model ClasseAtivo {
+  uid   String  @id @default(uuid()) @db.Uuid
+  nome  String  @unique @db.VarChar(80)
+  ativa Boolean @default(true)
+
+  posicoes PosicaoInvestimento[]
+
+  @@map("classe_ativo")
+}
+
+// valorReferenciaCentavos/dataReferencia sao cache do ultimo
+// HistoricoValorPosicao (atualizar na mesma transacao).
+model PosicaoInvestimento {
+  uid                     String                      @id @default(uuid()) @db.Uuid
+  titularUid              String                      @map("titular_uid") @db.Uuid
+  familiaUid              String?                     @map("familia_uid") @db.Uuid
+  instituicaoUid          String                      @map("instituicao_uid") @db.Uuid
+  classeUid               String                      @map("classe_uid") @db.Uuid
+  descricao               String                      @db.VarChar(255)
+  quantidade              Decimal?                    @db.Decimal(28, 10)
+  valorReferenciaCentavos BigInt?                     @map("valor_referencia_centavos")
+  dataReferencia          DateTime?                   @map("data_referencia") @db.Date
+  visibilidade            VisibilidadeRecurso         @default(PRIVADO)
+  situacao                SituacaoPosicaoInvestimento @default(ATIVA)
+  criadaEm                DateTime                    @default(now()) @map("criada_em") @db.Timestamptz(3)
+  atualizadaEm            DateTime                    @updatedAt @map("atualizada_em") @db.Timestamptz(3)
+
+  titular     Usuario                 @relation(fields: [titularUid], references: [uid], onDelete: Restrict)
+  familia     Familia?                @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  instituicao InstituicaoFinanceira   @relation(fields: [instituicaoUid], references: [uid], onDelete: Restrict)
+  classe      ClasseAtivo             @relation(fields: [classeUid], references: [uid], onDelete: Restrict)
+  movimentos  MovimentoInvestimento[]
+  historico   HistoricoValorPosicao[]
+
+  @@index([titularUid, situacao])
+  @@index([familiaUid, visibilidade])
+  @@map("posicao_investimento")
+}
+
+// Sinal: APORTE e RESGATE gravam valor POSITIVO (o tipo define o sentido);
+// AJUSTE grava valor ASSINADO (nao zero). Quando movimentacaoUid existe, o tipo
+// da movimentacao deve ser APORTE_INVESTIMENTO (saida) ou RESGATE_INVESTIMENTO
+// (entrada) com mesmo modulo. Sem movimentacaoUid = origem/destino externo
+// ao sistema (conta nao rastreada).
+model MovimentoInvestimento {
+  uid               String                        @id @default(uuid()) @db.Uuid
+  posicaoUid        String                        @map("posicao_uid") @db.Uuid
+  movimentacaoUid   String?                       @unique @map("movimentacao_uid") @db.Uuid
+  tipo              TipoMovimentoInvestimento
+  valorCentavos     BigInt                        @map("valor_centavos")
+  dataMovimento     DateTime                      @map("data_movimento") @db.Timestamptz(3)
+  situacao          SituacaoMovimentoInvestimento @default(CONFIRMADO)
+  chaveIdempotencia String                        @unique @map("chave_idempotencia") @db.VarChar(120)
+  criadoEm          DateTime                      @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  posicao      PosicaoInvestimento @relation(fields: [posicaoUid], references: [uid], onDelete: Restrict)
+  movimentacao MovimentacaoConta?  @relation(fields: [movimentacaoUid], references: [uid], onDelete: Restrict)
+
+  @@index([posicaoUid, dataMovimento])
+  @@map("movimento_investimento")
+}
+
+// Base do calculo de rentabilidade: variacao de valor menos aportes/resgates.
+model HistoricoValorPosicao {
+  uid            String   @id @default(uuid()) @db.Uuid
+  posicaoUid     String   @map("posicao_uid") @db.Uuid
+  valorCentavos  BigInt   @map("valor_centavos")
+  dataReferencia DateTime @map("data_referencia") @db.Date
+  registradoEm   DateTime @default(now()) @map("registrado_em") @db.Timestamptz(3)
+
+  posicao PosicaoInvestimento @relation(fields: [posicaoUid], references: [uid], onDelete: Restrict)
+
+  @@unique([posicaoUid, dataReferencia])
+  @@map("historico_valor_posicao")
+}
+
+// ─── 08. PREFERENCIAS, ALERTAS E AUDITORIA HTTP ─────────────────────────────
+model PreferenciaUsuario {
+  uid            String   @id @default(uuid()) @db.Uuid
+  usuarioUid     String   @unique @map("usuario_uid") @db.Uuid
+  idioma         String   @default("pt-BR") @db.VarChar(10)
+  moeda          String   @default("BRL") @db.Char(3)
+  fusoHorario    String   @default("America/Bahia") @map("fuso_horario") @db.VarChar(64)
+  valoresOcultos Boolean  @default(false) @map("valores_ocultos")
+  notificacoes   Boolean  @default(true)
+  horizonteMeses Int      @default(12) @map("horizonte_meses") @db.SmallInt
+  atualizadoEm   DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioUid], references: [uid], onDelete: Cascade)
+
+  @@map("preferencia_usuario")
+}
+
+model PreferenciaAlerta {
+  uid        String  @id @default(uuid()) @db.Uuid
+  usuarioUid String  @map("usuario_uid") @db.Uuid
+  tipo       String  @db.VarChar(80)
+  ativo      Boolean @default(true)
+
+  usuario Usuario @relation(fields: [usuarioUid], references: [uid], onDelete: Cascade)
+
+  @@unique([usuarioUid, tipo])
+  @@map("preferencia_alerta")
+}
+
+// chaveDedupe e unica por usuario (a mesma condicao pode alertar varios usuarios).
+model AlertaFinanceiro {
+  uid         String          @id @default(uuid()) @db.Uuid
+  usuarioUid  String          @map("usuario_uid") @db.Uuid
+  familiaUid  String?         @map("familia_uid") @db.Uuid
+  tipo        String          @db.VarChar(80)
+  descricao   String          @db.VarChar(255)
+  origemTipo  String?         @map("origem_tipo") @db.VarChar(60)
+  origemUid   String?         @map("origem_uid") @db.Uuid
+  competencia DateTime?       @db.Date
+  chaveDedupe String          @map("chave_dedupe") @db.VarChar(180)
+  gravidade   GravidadeAlerta
+  situacao    SituacaoAlerta  @default(ATIVO)
+  criadoEm    DateTime        @default(now()) @map("criado_em") @db.Timestamptz(3)
+  lidoEm      DateTime?       @map("lido_em") @db.Timestamptz(3)
+  resolvidoEm DateTime?       @map("resolvido_em") @db.Timestamptz(3)
+
+  usuario Usuario  @relation(fields: [usuarioUid], references: [uid], onDelete: Restrict)
+  familia Familia? @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+
+  @@unique([usuarioUid, chaveDedupe])
+  @@index([usuarioUid, situacao, criadoEm])
+  @@index([familiaUid, situacao])
+  @@map("alerta_financeiro")
+}
+
+// Audit trail append-only: chamadas HTTP relevantes, tentativas de login,
+// alteracoes financeiras/permissoes e leituras sensiveis. Nunca gravar senha,
+// token, cookies, CVV, payload bruto ou dados financeiros completos em JSON.
+// FKs com Restrict: usuarios/familias nunca sao apagados fisicamente, e o
+// historico de auditoria nao pode perder a identidade do autor.
+model EventoAuditoria {
+  uid                String             @id @default(uuid()) @db.Uuid
+  usuarioUid         String?            @map("usuario_uid") @db.Uuid
+  familiaUid         String?            @map("familia_uid") @db.Uuid
+  sessaoUid          String?            @map("sessao_uid") @db.Uuid
+  requisicaoUid      String?            @map("requisicao_uid") @db.Uuid
+  ocorridoEm         DateTime           @default(now()) @map("ocorrido_em") @db.Timestamptz(3)
+  ipOrigem           String?            @map("ip_origem") @db.VarChar(45)
+  tipoDispositivo    String?            @map("tipo_dispositivo") @db.VarChar(40)
+  modeloDispositivo  String?            @map("modelo_dispositivo") @db.VarChar(100)
+  sistemaOperacional String?            @map("sistema_operacional") @db.VarChar(100)
+  navegador          String?            @db.VarChar(100)
+  userAgent          String?            @map("user_agent") @db.VarChar(1024)
+  metodoHttp         String?            @map("metodo_http") @db.VarChar(10)
+  rotaHttp           String?            @map("rota_http") @db.VarChar(255)
+  codigoHttp         Int?               @map("codigo_http") @db.SmallInt
+  acao               String             @db.VarChar(100)
+  recurso            String?            @db.VarChar(80)
+  recursoUid         String?            @map("recurso_uid") @db.Uuid
+  resultado          ResultadoAuditoria
+  alteracoesSeguras  Json?              @map("alteracoes_seguras")
+  metadadosSeguros   Json?              @map("metadados_seguros")
+
+  usuario Usuario?       @relation(fields: [usuarioUid], references: [uid], onDelete: Restrict)
+  familia Familia?       @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  sessao  SessaoUsuario? @relation(fields: [sessaoUid], references: [uid], onDelete: SetNull)
+
+  @@index([usuarioUid, ocorridoEm])
+  @@index([familiaUid, ocorridoEm])
+  @@index([recurso, recursoUid, ocorridoEm])
+  @@index([ipOrigem, ocorridoEm])
+  @@index([resultado, ocorridoEm])
+  @@map("evento_auditoria")
+}
