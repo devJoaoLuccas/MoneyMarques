@@ -20,6 +20,11 @@ import { Page } from './members.service';
 
 export interface InviteView {
   uid: string;
+  /** `email`: convite enviado por e-mail. `codigo`: entrada por codigo de convite ja usado. */
+  origem: 'email' | 'codigo';
+  /** Nome de quem entrou (so em `origem: 'codigo'`; o convite por e-mail ainda nao tem conta associada). */
+  nome: string | null;
+  /** Destinatario do convite; em `origem: 'codigo'`, o e-mail de quem entrou. */
   email: string;
   papel: PapelFamilia;
   situacao: SituacaoConvite;
@@ -146,24 +151,64 @@ export class InvitesService {
       familiaUid: scope.familiaUid,
       ...(query.situacao ? { situacao: query.situacao } : {}),
     };
-    const [total, rows] = await this.prisma.$transaction([
-      this.prisma.conviteFamilia.count({ where }),
-      this.prisma.conviteFamilia.findMany({
-        where,
-        orderBy: [{ criadoEm: 'desc' }, { uid: 'asc' }],
-        skip: (pagina - 1) * tamanho,
-        take: tamanho,
-      }),
-    ]);
+    // Codigos de convite USADOS entram na lista como convites aceitos (D-FAM-009).
+    const includeCodes = !query.situacao || query.situacao === 'ACEITO';
+    const codeWhere: Prisma.CodigoConviteFamiliaWhereInput = {
+      familiaUid: scope.familiaUid,
+      situacao: 'USADO',
+    };
+    // Paginacao de uniao: busca ate `pagina * tamanho` de cada origem, ordena junto e fatia.
+    const take = pagina * tamanho;
+    const [emailTotal, emailRows, codeTotal, codeRows] =
+      await this.prisma.$transaction([
+        this.prisma.conviteFamilia.count({ where }),
+        this.prisma.conviteFamilia.findMany({
+          where,
+          orderBy: [{ criadoEm: 'desc' }, { uid: 'asc' }],
+          take,
+        }),
+        this.prisma.codigoConviteFamilia.count({
+          where: includeCodes ? codeWhere : { uid: { in: [] } },
+        }),
+        this.prisma.codigoConviteFamilia.findMany({
+          where: includeCodes ? codeWhere : { uid: { in: [] } },
+          orderBy: [{ criadoEm: 'desc' }, { uid: 'asc' }],
+          take,
+          include: {
+            usuario: {
+              select: { nomeCompleto: true, emailCriptografado: true },
+            },
+          },
+        }),
+      ]);
 
-    return {
-      itens: rows.map((row) =>
+    const itens: InviteView[] = [
+      ...emailRows.map((row) =>
         this.toView(row, this.vault.open(row.emailDestinoCriptografado)),
       ),
-      pagina,
-      tamanho,
-      total,
-    };
+      ...codeRows.map((row): InviteView => ({
+        uid: row.uid,
+        origem: 'codigo',
+        nome: row.usuario?.nomeCompleto ?? null,
+        // Administradores ja veem o e-mail completo na lista de integrantes (D-FAM-007).
+        email: row.usuario
+          ? this.vault.open(row.usuario.emailCriptografado)
+          : '',
+        papel: row.papelOferecido,
+        situacao: 'ACEITO',
+        expiraEm: row.expiraEm,
+        criadoEm: row.criadoEm,
+        respondidoEm: row.usadoEm,
+      })),
+    ]
+      .sort(
+        (a, b) =>
+          b.criadoEm.getTime() - a.criadoEm.getTime() ||
+          a.uid.localeCompare(b.uid),
+      )
+      .slice((pagina - 1) * tamanho, pagina * tamanho);
+
+    return { itens, pagina, tamanho, total: emailTotal + codeTotal };
   }
 
   async revoke(
@@ -551,6 +596,8 @@ export class InvitesService {
   ): InviteView {
     return {
       uid: row.uid,
+      origem: 'email',
+      nome: null,
       email,
       papel: row.papelOferecido,
       situacao: row.situacao,

@@ -72,5 +72,6 @@ Alternativa ao convite por e-mail para facilitar a entrada (pessoa recebe o cód
 | Quem já é integrante | Não consome o código. |
 | Fluxo na tela | Prévia (nome da família, quem convidou, papel, validade) e só então "Entrar na família". A tela de primeiro acesso passou a oferecer **criar ou entrar**. |
 | Tela do administrador | Em "Convites enviados": botões **Enviar convite** e **Gerar código** (vira **Visualizar código** quando há código ativo) na linha do título; ambos abrem modal. |
+| Código usado na lista | Código **USADO** aparece em "Convites enviados" como convite **aceito** (`origem: codigo`): nome e e-mail de quem entrou (visíveis ao administrador, como na lista de integrantes), papel, data de geração e de entrada. Não oferece reenviar nem revogar. Códigos ativos, revogados ou expirados não entram na lista. A paginação une as duas origens por data de criação. |
 
 Lacunas: limite por IP (hoje só por usuário); notificação ao administrador quando o código é usado; limite de códigos ativos por família.
