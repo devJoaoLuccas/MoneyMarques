@@ -178,10 +178,3 @@
   user-select: all;
 }
 
-.divider {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding-top: var(--space-6);
-  border-top: var(--border-width) solid var(--color-border);
-}

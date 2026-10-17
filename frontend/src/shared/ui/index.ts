@@ -9,6 +9,7 @@ export { PasswordStrength, type PasswordRequirement } from './PasswordStrength/P
 export { Skeleton } from './Skeleton/Skeleton'
 export { SelectField, type SelectOption } from './SelectField/SelectField'
 export { LoadingIndicator, Spinner } from './Spinner/Spinner'
+export { Tabs, type TabItem } from './Tabs/Tabs'
 export { TextField } from './TextField/TextField'
 export { MascaraValores } from './MascaraValores/MascaraValores'
 export { PrivacidadeProvider } from './MascaraValores/PrivacidadeProvider'

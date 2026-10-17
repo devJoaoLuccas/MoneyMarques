@@ -6,7 +6,6 @@ import { toApiError } from '../../../shared/lib/api-error'
 import { applyFieldErrors, describeApiError } from '../../../shared/lib/form-errors'
 import { paths } from '../../../shared/routes/paths'
 import { Alert, Button, TextField } from '../../../shared/ui'
-import { LogoutButton } from '../../auth'
 import { useCreateFamily } from '../hooks/useFamily'
 import {
   createFamilySchema,
@@ -81,7 +80,6 @@ export function CreateFamilyForm() {
       <Button type="submit" fullWidth loading={createFamily.isPending}>
         Criar família
       </Button>
-      <LogoutButton variant="ghost" label="Sair da conta" />
     </form>
   )
 }
