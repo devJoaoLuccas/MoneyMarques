@@ -14,7 +14,7 @@ export interface EmailContent {
   greeting?: string;
   paragraphs: string[];
   action?: EmailAction;
-  /** Link secundario exibido abaixo do botao (ex.: "Esqueceu a senha?"). */
+  /** Hyperlink secundario abaixo do botao: o proprio rotulo e o link (ex.: "Esqueceu a senha?"). */
   secondaryLink?: EmailAction;
   /** Texto auxiliar (12-13 px) abaixo do botao. */
   note?: string;
@@ -69,7 +69,7 @@ export function renderEmailTemplate(
     : '';
 
   const secondary = content.secondaryLink
-    ? `<p style="margin:0 0 16px 0;font-family:${FONT_TEXT};font-size:14px;line-height:1.5;color:#A7B0C5;">${escapeHtml(content.secondaryLink.label)} <a href="${escapeHtml(content.secondaryLink.url)}" style="color:#22D3EE;">${escapeHtml(content.secondaryLink.url)}</a></p>`
+    ? `<p style="margin:0 0 16px 0;font-family:${FONT_TEXT};font-size:14px;line-height:1.5;color:#A7B0C5;"><a href="${escapeHtml(content.secondaryLink.url)}" style="color:#22D3EE;">${escapeHtml(content.secondaryLink.label)}</a></p>`
     : '';
 
   const note = content.note

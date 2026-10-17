@@ -34,6 +34,24 @@ describe('renderEmailTemplate', () => {
     expect(html).not.toContain('[');
   });
 
+  it('renderiza o link secundario como hyperlink no proprio rotulo', () => {
+    const html = renderEmailTemplate(
+      {
+        preview: 'p',
+        title: 't',
+        paragraphs: ['x'],
+        secondaryLink: {
+          label: 'Esqueceu a senha?',
+          url: 'https://app.exemplo.com/esqueci-senha',
+        },
+      },
+      links,
+    );
+    expect(html).toContain('>Esqueceu a senha?</a>');
+    expect(html).toContain('href="https://app.exemplo.com/esqueci-senha"');
+    expect(html).not.toContain('>https://app.exemplo.com/esqueci-senha</a>');
+  });
+
   it('omite botao e link secundario quando nao informados', () => {
     const html = renderEmailTemplate(
       { preview: 'p', title: 't', paragraphs: ['x'] },
