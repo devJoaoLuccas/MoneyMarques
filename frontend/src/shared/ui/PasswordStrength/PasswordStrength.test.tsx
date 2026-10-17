@@ -2,7 +2,8 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { PasswordStrength } from './PasswordStrength'
 
-const requirements = (met: boolean[]) => met.map((value, index) => ({ id: `r${index}`, label: `Regra ${index}`, met: value }))
+const requirements = (met: boolean[]) =>
+  met.map((value, index) => ({ id: `r${index}`, label: `Regra ${index}`, met: value }))
 
 describe('PasswordStrength', () => {
   it('nao renderiza nada quando vazio', () => {

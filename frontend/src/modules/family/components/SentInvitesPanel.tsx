@@ -1,20 +1,14 @@
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { LuMail, LuUserPlus } from 'react-icons/lu'
+import { LuKeyRound, LuUserPlus } from 'react-icons/lu'
 import { toApiError } from '../../../shared/lib/api-error'
-import { applyFieldErrors, describeApiError } from '../../../shared/lib/form-errors'
+import { describeApiError } from '../../../shared/lib/form-errors'
 import { formatDate } from '../../../shared/lib/format-date'
-import { Alert, Button, ConfirmDialog, EmptyState, LoadingIndicator, SelectField, TextField } from '../../../shared/ui'
-import { useInvites, useIssueInvite, useResendInvite, useRevokeInvite, type ActiveFamily } from '../hooks/useFamily'
-import {
-  inviteSchema,
-  ROLE_LABELS,
-  ROLE_OPTIONS,
-  type InviteFormValues,
-  type InvitePayload,
-} from '../schemas/family.schemas'
+import { Alert, Button, ConfirmDialog, EmptyState, LoadingIndicator, SelectField } from '../../../shared/ui'
+import { useInviteCodes, useInvites, useResendInvite, useRevokeInvite, type ActiveFamily } from '../hooks/useFamily'
+import { ROLE_LABELS } from '../schemas/family.schemas'
 import type { Invite, InviteStatus } from '../types'
+import { InviteCodeDialog } from './InviteCodeDialog'
+import { InviteFormDialog } from './InviteFormDialog'
 import styles from './FamilyPanels.module.css'
 
 interface SentInvitesPanelProps {
@@ -34,13 +28,18 @@ const STATUS_FILTER = [
   ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
 ]
 
-const FIELDS = ['email', 'papel'] as const
+type Modal = 'convite' | 'codigo' | null
 
-/** FAM-005: emissao, acompanhamento, reenvio e revogacao de convites (somente administradores). */
+/**
+ * FAM-005 / D-FAM-009: convites enviados, com as acoes "Enviar convite" e
+ * "Gerar codigo" (ou "Visualizar codigo", se ja existe um codigo ativo) na
+ * mesma linha do titulo. Somente administradores (o servidor tambem exige).
+ */
 export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
   const [pagina, setPagina] = useState(1)
   const [situacao, setSituacao] = useState<InviteStatus | ''>('')
   const [revoking, setRevoking] = useState<Invite | null>(null)
+  const [modal, setModal] = useState<Modal>(null)
   const [feedback, setFeedback] = useState<{
     variant: 'success' | 'error'
     message: string
@@ -50,38 +49,11 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
     pagina,
     situacao: situacao || undefined,
   })
-  const issue = useIssueInvite(family.uid)
+  const codes = useInviteCodes(family.uid)
   const revoke = useRevokeInvite(family.uid)
   const resend = useResendInvite(family.uid)
 
-  const {
-    register,
-    handleSubmit,
-    setError,
-    reset,
-    formState: { errors },
-  } = useForm<InviteFormValues, unknown, InvitePayload>({
-    resolver: zodResolver(inviteSchema),
-    defaultValues: { email: '', papel: 'INTEGRANTE' },
-  })
-
-  const onSubmit = handleSubmit(async (values) => {
-    if (issue.isPending) return
-    setFeedback(null)
-    try {
-      await issue.mutateAsync(values)
-      setFeedback({
-        variant: 'success',
-        message: `Convite enviado para ${values.email}.`,
-      })
-      reset({ email: '', papel: values.papel })
-    } catch (cause) {
-      const error = toApiError(cause)
-      if (!applyFieldErrors<InviteFormValues>(error, FIELDS, setError)) {
-        setFeedback({ variant: 'error', message: describeApiError(error) })
-      }
-    }
-  })
+  const activeCode = codes.data?.find((code) => code.situacao === 'ATIVO') ?? null
 
   async function resendInvite(invite: Invite) {
     setFeedback(null)
@@ -121,28 +93,22 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
   const totalPages = invites.data ? Math.max(1, Math.ceil(invites.data.total / invites.data.tamanho)) : 1
 
   return (
-    <div className={styles.form}>
-      <form className={styles.form} onSubmit={onSubmit} noValidate>
-        <TextField
-          label="E-mail da pessoa"
-          type="email"
-          inputMode="email"
-          autoComplete="off"
-          startIcon={<LuMail />}
-          error={errors.email?.message}
-          {...register('email')}
-        />
-        <SelectField
-          label="Papel na família"
-          options={ROLE_OPTIONS}
-          error={errors.papel?.message}
-          {...register('papel')}
-        />
-        <Button type="submit" loading={issue.isPending}>
-          <LuUserPlus aria-hidden="true" />
-          Enviar convite
-        </Button>
-      </form>
+    <section className={styles.form} aria-labelledby="convites-enviados-titulo">
+      <div className={styles.sectionHeader}>
+        <h2 id="convites-enviados-titulo" className={styles.sectionTitle}>
+          Convites enviados
+        </h2>
+        <div className={styles.cardActions}>
+          <Button onClick={() => setModal('convite')}>
+            <LuUserPlus aria-hidden="true" />
+            Enviar convite
+          </Button>
+          <Button variant="secondary" disabled={codes.isPending} onClick={() => setModal('codigo')}>
+            <LuKeyRound aria-hidden="true" />
+            {activeCode ? 'Visualizar código' : 'Gerar código'}
+          </Button>
+        </div>
+      </div>
 
       {feedback && <Alert variant={feedback.variant}>{feedback.message}</Alert>}
 
@@ -168,7 +134,7 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
 
       {invites.data && invites.data.itens.length === 0 && (
         <EmptyState title="Nenhum convite por aqui">
-          Convide alguém pelo e-mail para começar a compartilhar a família.
+          Envie um convite por e-mail ou gere um código para começar a compartilhar a família.
         </EmptyState>
       )}
 
@@ -240,6 +206,22 @@ export function SentInvitesPanel({ family }: SentInvitesPanelProps) {
           <p>O link enviado para {revoking.email} deixará de funcionar. Você poderá enviar um novo convite depois.</p>
         </ConfirmDialog>
       )}
-    </div>
+
+      {modal === 'convite' && (
+        <InviteFormDialog
+          family={family}
+          onClose={() => setModal(null)}
+          onSent={(email) => setFeedback({ variant: 'success', message: `Convite enviado para ${email}.` })}
+        />
+      )}
+      {modal === 'codigo' && (
+        <InviteCodeDialog
+          family={family}
+          activeCode={activeCode}
+          onClose={() => setModal(null)}
+          onRevoked={() => setFeedback({ variant: 'success', message: 'Código revogado.' })}
+        />
+      )}
+    </section>
   )
 }

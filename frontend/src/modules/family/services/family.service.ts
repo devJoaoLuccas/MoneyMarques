@@ -105,6 +105,12 @@ export const familyService = {
     return data
   },
 
+  /** Codigo ativo em claro (so administradores; a leitura e auditada). */
+  async getActiveInviteCode(familiaUid: string): Promise<IssuedInviteCode> {
+    const { data } = await http.get<IssuedInviteCode>(`/familias/${familiaUid}/codigos-convite/ativo`)
+    return data
+  },
+
   async revokeInviteCode(familiaUid: string, codigoUid: string): Promise<void> {
     await http.post(`/familias/${familiaUid}/codigos-convite/${codigoUid}/revogar`)
   },

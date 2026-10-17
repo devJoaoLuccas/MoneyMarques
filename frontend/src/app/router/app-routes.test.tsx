@@ -96,7 +96,7 @@ describe('rotas da aplicacao (composicao dos modulos)', () => {
     vi.mocked(authService.getSession).mockResolvedValue(authenticated)
     vi.mocked(familyService.listInvites).mockResolvedValue({ itens: [], pagina: 1, tamanho: 10, total: 0 })
     renderApp('/familia/convites-enviados')
-    expect(await screen.findByRole('heading', { level: 1, name: /convites enviados/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: /^convites$/i })).toBeInTheDocument()
   })
 
   it('sem familia, a gestao de integrantes leva ao onboarding', async () => {

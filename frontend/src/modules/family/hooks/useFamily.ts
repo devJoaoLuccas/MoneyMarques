@@ -181,6 +181,21 @@ export function useInviteCodes(familiaUid: string) {
   })
 }
 
+/**
+ * Codigo ativo em claro, so enquanto o modal esta aberto. Nao fica em cache
+ * (gcTime 0): o segredo nao permanece na memoria da aplicacao depois de fechar.
+ */
+export function useActiveInviteCode(familiaUid: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...familyKeys.inviteCodes(familiaUid), 'active'] as const,
+    queryFn: () => familyService.getActiveInviteCode(familiaUid),
+    enabled,
+    gcTime: 0,
+    staleTime: 0,
+    retry: false,
+  })
+}
+
 export function useIssueInviteCode(familiaUid: string) {
   const queryClient = useQueryClient()
   return useMutation({

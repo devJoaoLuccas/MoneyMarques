@@ -15,7 +15,17 @@ export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   ref?: Ref<HTMLInputElement>
 }
 
-export function TextField({ label, hint, error, endAdornment, startIcon, id, className, ref, ...rest }: TextFieldProps) {
+export function TextField({
+  label,
+  hint,
+  error,
+  endAdornment,
+  startIcon,
+  id,
+  className,
+  ref,
+  ...rest
+}: TextFieldProps) {
   const generatedId = useId()
   const inputId = id ?? generatedId
   const ids = { hintId: `${inputId}-hint`, errorId: `${inputId}-error` }
@@ -37,7 +47,13 @@ export function TextField({ label, hint, error, endAdornment, startIcon, id, cla
           id={inputId}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy(ids, { hint, error })}
-          className={cn(styles.input, error && styles.invalid, Boolean(endAdornment) && styles.withAdornment, Boolean(startIcon) && styles.withStartIcon, className)}
+          className={cn(
+            styles.input,
+            error && styles.invalid,
+            Boolean(endAdornment) && styles.withAdornment,
+            Boolean(startIcon) && styles.withStartIcon,
+            className,
+          )}
         />
         {endAdornment && <div className={styles.adornment}>{endAdornment}</div>}
       </div>
