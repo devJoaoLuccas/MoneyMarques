@@ -7,6 +7,7 @@ import { FamilyContextGuard } from './guards/family-context.guard';
 import { InvitesController } from './invites.controller';
 import { FamilyMailer } from './services/family-mailer.service';
 import { FamilyService } from './services/family.service';
+import { InviteCodesService } from './services/invite-codes.service';
 import { InvitesService } from './services/invites.service';
 import { MembersService } from './services/members.service';
 
@@ -18,6 +19,7 @@ import { MembersService } from './services/members.service';
     FamilyService,
     MembersService,
     InvitesService,
+    InviteCodesService,
     FamilyMailer,
     FamilyContextGuard,
   ],

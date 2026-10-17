@@ -37,6 +37,13 @@ enum SituacaoConvite {
   REVOGADO
 }
 
+enum SituacaoCodigoConvite {
+  ATIVO
+  USADO
+  REVOGADO
+  EXPIRADO
+}
+
 enum VisibilidadeRecurso {
   PRIVADO
   COMPARTILHADO
@@ -218,31 +225,33 @@ model Usuario {
   atualizadoEm       DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(3)
   excluidoEm         DateTime? @map("excluido_em") @db.Timestamptz(3)
 
-  sessoes               SessaoUsuario[]
-  tokens                TokenAutenticacao[]
-  configuracaoMfa       ConfiguracaoMfa?
-  codigosRecuperacaoMfa CodigoRecuperacaoMfa[]
-  familiasCriadas       Familia[]                 @relation("CriadorFamilia")
-  participacoes         IntegranteFamilia[]
-  convitesEmitidos      ConviteFamilia[]          @relation("EmissorConvite")
-  convitesAceitos       ConviteFamilia[]          @relation("AceitanteConvite")
-  permissoesRecebidas   PermissaoRecursoFamilia[] @relation("DestinatarioPermissao")
-  permissoesConcedidas  PermissaoRecursoFamilia[] @relation("ConcedentePermissao")
-  contas                ContaFinanceira[]
-  categorias            CategoriaFinanceira[]
-  lancamentos           LancamentoFinanceiro[]    @relation("TitularLancamento")
-  lancamentosCriados    LancamentoFinanceiro[]    @relation("CriadorLancamento")
-  movimentacoesCriadas  MovimentacaoConta[]       @relation("CriadorMovimentacao")
-  recorrencias          RecorrenciaFinanceira[]   @relation("TitularRecorrencia")
-  recorrenciasCriadas   RecorrenciaFinanceira[]   @relation("CriadorRecorrencia")
-  cartoes               CartaoCredito[]
-  comprasCriadas        CompraCartao[]
-  orcamentos            OrcamentoCategoria[]
-  posicoes              PosicaoInvestimento[]
-  preferencias          PreferenciaUsuario?
-  preferenciasAlertas   PreferenciaAlerta[]
-  alertas               AlertaFinanceiro[]
-  eventosAuditoria      EventoAuditoria[]
+  sessoes                SessaoUsuario[]
+  tokens                 TokenAutenticacao[]
+  configuracaoMfa        ConfiguracaoMfa?
+  codigosRecuperacaoMfa  CodigoRecuperacaoMfa[]
+  familiasCriadas        Familia[]                 @relation("CriadorFamilia")
+  participacoes          IntegranteFamilia[]
+  convitesEmitidos       ConviteFamilia[]          @relation("EmissorConvite")
+  convitesAceitos        ConviteFamilia[]          @relation("AceitanteConvite")
+  codigosConviteEmitidos CodigoConviteFamilia[]    @relation("EmissorCodigoConvite")
+  codigosConviteUsados   CodigoConviteFamilia[]    @relation("UsuarioCodigoConvite")
+  permissoesRecebidas    PermissaoRecursoFamilia[] @relation("DestinatarioPermissao")
+  permissoesConcedidas   PermissaoRecursoFamilia[] @relation("ConcedentePermissao")
+  contas                 ContaFinanceira[]
+  categorias             CategoriaFinanceira[]
+  lancamentos            LancamentoFinanceiro[]    @relation("TitularLancamento")
+  lancamentosCriados     LancamentoFinanceiro[]    @relation("CriadorLancamento")
+  movimentacoesCriadas   MovimentacaoConta[]       @relation("CriadorMovimentacao")
+  recorrencias           RecorrenciaFinanceira[]   @relation("TitularRecorrencia")
+  recorrenciasCriadas    RecorrenciaFinanceira[]   @relation("CriadorRecorrencia")
+  cartoes                CartaoCredito[]
+  comprasCriadas         CompraCartao[]
+  orcamentos             OrcamentoCategoria[]
+  posicoes               PosicaoInvestimento[]
+  preferencias           PreferenciaUsuario?
+  preferenciasAlertas    PreferenciaAlerta[]
+  alertas                AlertaFinanceiro[]
+  eventosAuditoria       EventoAuditoria[]
 
   @@map("usuario")
 }
@@ -321,19 +330,20 @@ model Familia {
   atualizadaEm  DateTime  @updatedAt @map("atualizada_em") @db.Timestamptz(3)
   encerradaEm   DateTime? @map("encerrada_em") @db.Timestamptz(3)
 
-  criador      Usuario                   @relation("CriadorFamilia", fields: [criadorUid], references: [uid], onDelete: Restrict)
-  integrantes  IntegranteFamilia[]
-  convites     ConviteFamilia[]
-  permissoes   PermissaoRecursoFamilia[]
-  contas       ContaFinanceira[]
-  categorias   CategoriaFinanceira[]
-  lancamentos  LancamentoFinanceiro[]
-  recorrencias RecorrenciaFinanceira[]
-  cartoes      CartaoCredito[]
-  orcamentos   OrcamentoCategoria[]
-  posicoes     PosicaoInvestimento[]
-  alertas      AlertaFinanceiro[]
-  auditorias   EventoAuditoria[]
+  criador        Usuario                   @relation("CriadorFamilia", fields: [criadorUid], references: [uid], onDelete: Restrict)
+  integrantes    IntegranteFamilia[]
+  convites       ConviteFamilia[]
+  codigosConvite CodigoConviteFamilia[]
+  permissoes     PermissaoRecursoFamilia[]
+  contas         ContaFinanceira[]
+  categorias     CategoriaFinanceira[]
+  lancamentos    LancamentoFinanceiro[]
+  recorrencias   RecorrenciaFinanceira[]
+  cartoes        CartaoCredito[]
+  orcamentos     OrcamentoCategoria[]
+  posicoes       PosicaoInvestimento[]
+  alertas        AlertaFinanceiro[]
+  auditorias     EventoAuditoria[]
 
   @@map("familia")
 }
@@ -381,6 +391,30 @@ model ConviteFamilia {
   @@index([familiaUid, situacao, expiraEm])
   @@index([emailDestinoHmac, situacao])
   @@map("convite_familia")
+}
+
+// Codigo de convite (D-FAM-009): entrada na familia SEM e-mail de destino, uso
+// unico e curto (24 h). So o HMAC do codigo e persistido; o codigo em claro
+// aparece uma unica vez, na resposta da geracao. Papel oferecido nunca e
+// ADMINISTRADOR (CHECK em constraints.sql).
+model CodigoConviteFamilia {
+  uid            String                @id @default(uuid()) @db.Uuid
+  familiaUid     String                @map("familia_uid") @db.Uuid
+  emitidoPorUid  String                @map("emitido_por_uid") @db.Uuid
+  usadoPorUid    String?               @map("usado_por_uid") @db.Uuid
+  papelOferecido PapelFamilia          @default(INTEGRANTE) @map("papel_oferecido")
+  codigoHash     String                @unique @map("codigo_hash") @db.VarChar(255)
+  situacao       SituacaoCodigoConvite @default(ATIVO)
+  expiraEm       DateTime              @map("expira_em") @db.Timestamptz(3)
+  criadoEm       DateTime              @default(now()) @map("criado_em") @db.Timestamptz(3)
+  usadoEm        DateTime?             @map("usado_em") @db.Timestamptz(3)
+
+  familia Familia  @relation(fields: [familiaUid], references: [uid], onDelete: Restrict)
+  emissor Usuario  @relation("EmissorCodigoConvite", fields: [emitidoPorUid], references: [uid], onDelete: Restrict)
+  usuario Usuario? @relation("UsuarioCodigoConvite", fields: [usadoPorUid], references: [uid], onDelete: SetNull)
+
+  @@index([familiaUid, situacao, expiraEm])
+  @@map("codigo_convite_familia")
 }
 
 // ACL polimorfica: recursoUid corresponde a uma das tabelas financeiras,

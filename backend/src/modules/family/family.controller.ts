@@ -18,6 +18,7 @@ import type { AuthContext } from '../auth/auth.types';
 import { parseUid } from './decorators/parse-uid.pipe';
 import {
   CreateFamilyDto,
+  IssueInviteCodeDto,
   IssueInviteDto,
   ListInvitesQueryDto,
   ListMembersQueryDto,
@@ -26,6 +27,7 @@ import {
 import { CurrentFamily, FamilyAccess } from './guards/family-context.guard';
 import type { FamilyScope } from './guards/family-context.guard';
 import { FamilyService } from './services/family.service';
+import { InviteCodesService } from './services/invite-codes.service';
 import { InvitesService } from './services/invites.service';
 import { MembersService } from './services/members.service';
 
@@ -40,6 +42,7 @@ export class FamilyController {
     private readonly families: FamilyService,
     private readonly members: MembersService,
     private readonly invites: InvitesService,
+    private readonly inviteCodes: InviteCodesService,
   ) {}
 
   @Auth()
@@ -145,5 +148,37 @@ export class FamilyController {
     @Client() client: ClientInfo,
   ): Promise<void> {
     await this.invites.resend(scope, auth, conviteUid, client);
+  }
+
+  // ─── Codigos de convite (administracao) ────────────────────────────────────
+
+  /** O codigo em claro aparece so nesta resposta. */
+  @FamilyAccess('CONVIDAR')
+  @Post(':familiaUid/codigos-convite')
+  issueInviteCode(
+    @CurrentFamily() scope: FamilyScope,
+    @CurrentAuth() auth: AuthContext,
+    @Body() dto: IssueInviteCodeDto,
+    @Client() client: ClientInfo,
+  ) {
+    return this.inviteCodes.issue(scope, auth, dto, client);
+  }
+
+  @FamilyAccess('LISTAR_CONVITES')
+  @Get(':familiaUid/codigos-convite')
+  listInviteCodes(@CurrentFamily() scope: FamilyScope) {
+    return this.inviteCodes.list(scope);
+  }
+
+  @FamilyAccess('REVOGAR_CONVITE')
+  @Post(':familiaUid/codigos-convite/:codigoUid/revogar')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async revokeInviteCode(
+    @CurrentFamily() scope: FamilyScope,
+    @CurrentAuth() auth: AuthContext,
+    @Param('codigoUid', parseUid) codigoUid: string,
+    @Client() client: ClientInfo,
+  ): Promise<void> {
+    await this.inviteCodes.revoke(scope, auth, codigoUid, client);
   }
 }

@@ -23,4 +23,9 @@ export const FAMILY_LIMITS = {
   invitePerAdmin: { limit: 20, windowMs: HOUR },
   invitePerFamily: { limit: 50, windowMs: 24 * HOUR },
   inviteResponsePerUser: { limit: 20, windowMs: 15 * MINUTE },
+  /** Tentativas ERRADAS de codigo por usuario (protege contra adivinhacao). */
+  inviteCodeFailuresPerUser: { limit: 5, windowMs: 15 * MINUTE },
 } satisfies Record<string, RateLimitRule>;
+
+/** Validade do codigo de convite (D-FAM-009): curta, para uso imediato. */
+export const INVITE_CODE_TTL_MS = 24 * HOUR;

@@ -126,3 +126,23 @@ export class InviteTokenDto {
   @MaxLength(256, { message: 'Link inválido.' })
   token!: string;
 }
+
+/** Codigo de convite: nunca oferece ADMINISTRADOR (promocao e um passo separado e confirmado). */
+export class IssueInviteCodeDto {
+  @IsOptional()
+  @IsIn(['INTEGRANTE', 'VISUALIZADOR'], {
+    message: 'Papel inválido para código de convite.',
+  })
+  papel?: 'INTEGRANTE' | 'VISUALIZADOR';
+}
+
+/** O codigo vai no corpo (nunca na URL), como o token do convite. */
+export class InviteCodeDto {
+  @TrimString()
+  @IsString()
+  @IsNotEmpty({ message: 'Informe o código.' })
+  @MaxLength(32, {
+    message: 'Código inválido ou expirado. Confira com quem convidou você.',
+  })
+  codigo!: string;
+}

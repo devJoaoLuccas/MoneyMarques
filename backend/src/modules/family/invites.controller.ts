@@ -12,7 +12,8 @@ import { CurrentAuth } from '../auth/decorators/current-auth.decorator';
 import { Auth } from '../auth/guards/auth.guard';
 import type { AuthContext } from '../auth/auth.types';
 import { parseUid } from './decorators/parse-uid.pipe';
-import { InviteTokenDto } from './dto/family.dto';
+import { InviteCodeDto, InviteTokenDto } from './dto/family.dto';
+import { InviteCodesService } from './services/invite-codes.service';
 import { InvitesService } from './services/invites.service';
 
 /**
@@ -22,7 +23,10 @@ import { InvitesService } from './services/invites.service';
 @Auth()
 @Controller('convites')
 export class InvitesController {
-  constructor(private readonly invites: InvitesService) {}
+  constructor(
+    private readonly invites: InvitesService,
+    private readonly inviteCodes: InviteCodesService,
+  ) {}
 
   @Post('previa')
   @HttpCode(HttpStatus.OK)
@@ -69,5 +73,26 @@ export class InvitesController {
     @Client() client: ClientInfo,
   ): Promise<void> {
     await this.invites.declinePending(auth, conviteUid, client);
+  }
+
+  /** Codigo de convite (sem e-mail de destino). O codigo vai no corpo, nunca na URL. */
+  @Post('codigo/previa')
+  @HttpCode(HttpStatus.OK)
+  previewCode(
+    @CurrentAuth() auth: AuthContext,
+    @Body() dto: InviteCodeDto,
+    @Client() client: ClientInfo,
+  ) {
+    return this.inviteCodes.preview(auth, dto.codigo, client);
+  }
+
+  @Post('codigo/entrar')
+  @HttpCode(HttpStatus.OK)
+  redeemCode(
+    @CurrentAuth() auth: AuthContext,
+    @Body() dto: InviteCodeDto,
+    @Client() client: ClientInfo,
+  ) {
+    return this.inviteCodes.redeem(auth, dto.codigo, client);
   }
 }

@@ -3,6 +3,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 export type ApiErrorCode =
   | 'VALIDATION_ERROR'
   | 'INVALID_CREDENTIALS'
+  | 'INVALID_INVITE_CODE'
   | 'TOO_MANY_ATTEMPTS'
   | 'UNAUTHENTICATED'
   | 'MFA_REQUIRED'
@@ -94,6 +95,13 @@ export const ApiErrors = {
       HttpStatus.BAD_REQUEST,
       'INVALID_TOKEN',
       'Este link é inválido ou expirou. Solicite um novo.',
+    ),
+
+  invalidInviteCode: () =>
+    new ApiException(
+      HttpStatus.BAD_REQUEST,
+      'INVALID_INVITE_CODE',
+      'Código inválido ou expirado. Confira com quem convidou você.',
     ),
 
   invalidMfaCode: () =>
